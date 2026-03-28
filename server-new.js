@@ -32,6 +32,8 @@ import {
   deleteAccount,
   revokeApiKey,
   getApiKeysByAccount,
+  getLeadsWithPagination,
+  countAllLeads,
 } from './db.js';
 import { sendLeadNotification } from './mailer.js';
 import { validateRequest, loginSchema, registerSchema, createApiKeySchema, generatePreviewSchema, generateBatchSchema, leadSchema } from './src/schemas.js';
@@ -39,6 +41,7 @@ import { register, login, getAccount, createAccountApiKey, refreshAccessToken } 
 import { requireAuth, requireApiKey, requireAuthEither, attachAccountId } from './src/auth-middleware.js';
 import { recordAudit, getClientIp, AUDIT_EVENTS } from './src/audit-service.js';
 import { validationError, unauthorizedError, notFoundError, ERROR_CODES } from './src/error-handler.js';
+import { parsePaginationParams, createPaginatedResponse } from './src/pagination.js';
 import { authLimiter, publicLimiter, leadsLimiter, apiLimiter } from './src/rate-limiter.js';
 import { trackUsage, getUsageStats as getUserStats } from './src/usage-service.js';
 
@@ -544,10 +547,18 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-// Get all leads
+// Get all leads (with pagination)
 app.get('/api/v1/admin/leads', adminOnly, (req, res) => {
-  const leads = getAllLeads.all();
-  res.json({ ok: true, count: leads.length, leads });
+  try {
+    const { limit, offset } = parsePaginationParams(req.query);
+    const leads = getLeadsWithPagination.all(limit, offset);
+    const { count } = countAllLeads.get();
+
+    res.json(createPaginatedResponse(leads, limit, offset, count));
+  } catch (err) {
+    console.error('[admin-leads]', err);
+    res.status(500).json(validationError({ general: 'Failed to fetch leads' }));
+  }
 });
 
 // Get lead by ID - CRITICAL FIX: Validate ID is a positive integer

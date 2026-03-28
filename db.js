@@ -80,6 +80,8 @@ db.exec(`
 // Leads
 export const insertLead = db.prepare('INSERT INTO leads (name, email, organization, role, message, created_at) VALUES (@name, @email, @organization, @role, @message, @created_at)');
 export const getAllLeads = db.prepare('SELECT * FROM leads ORDER BY created_at DESC');
+export const getLeadsWithPagination = db.prepare('SELECT * FROM leads ORDER BY created_at DESC LIMIT ? OFFSET ?');
+export const countAllLeads = db.prepare('SELECT COUNT(*) as count FROM leads');
 export const getLeadById = db.prepare('SELECT * FROM leads WHERE id = ?');
 export const updateLeadStatus = db.prepare('UPDATE leads SET status = ? WHERE id = ?');
 
