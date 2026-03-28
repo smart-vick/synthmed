@@ -105,4 +105,22 @@ export const logAudit = db.prepare('INSERT INTO audit_logs (account_id, action, 
 export const insertPreviewEvent = db.prepare('INSERT INTO preview_events (province, condition_category, format, generated_at) VALUES (@province, @condition_category, @format, @generated_at)');
 export function getPreviewCount() { return db.prepare('SELECT COUNT(*) as count FROM preview_events').get(); }
 
+// Account Deletion (GDPR)
+export function deleteAccount(accountId) {
+  const deleteApiKeys = db.prepare('DELETE FROM api_keys WHERE account_id = ?');
+  const deleteUsageEvents = db.prepare('DELETE FROM usage_events WHERE account_id = ?');
+  const deleteAuditLogs = db.prepare('DELETE FROM audit_logs WHERE account_id = ?');
+  const deleteAccountRecord = db.prepare('DELETE FROM accounts WHERE id = ?');
+
+  // Use transaction to ensure all-or-nothing deletion
+  const transaction = db.transaction(() => {
+    deleteApiKeys.run(accountId);
+    deleteUsageEvents.run(accountId);
+    deleteAuditLogs.run(accountId);
+    deleteAccountRecord.run(accountId);
+  });
+
+  transaction();
+}
+
 export default db;

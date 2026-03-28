@@ -29,6 +29,7 @@ import {
   updateLeadStatus,
   insertPreviewEvent,
   getPreviewCount,
+  deleteAccount,
 } from './db.js';
 import { sendLeadNotification } from './mailer.js';
 import { validateRequest, loginSchema, registerSchema, createApiKeySchema, generatePreviewSchema, generateBatchSchema, leadSchema } from './src/schemas.js';
@@ -284,6 +285,25 @@ app.get('/api/v1/usage', requireAuth, (req, res) => {
   });
 });
 
+// Delete account (GDPR)
+app.delete('/api/v1/account', requireAuth, (req, res) => {
+  try {
+    const accountId = req.auth.accountId;
+    deleteAccount(accountId);
+
+    res.json({
+      ok: true,
+      message: 'Account deleted successfully. All associated data has been removed.',
+    });
+  } catch (err) {
+    console.error('[delete-account]', err);
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to delete account',
+    });
+  }
+});
+
 // ══════════════════════════════════════════════════════════════
 // ─── DATA GENERATION API (PUBLIC + AUTHENTICATED) ──────────────
 // ══════════════════════════════════════════════════════════════
@@ -507,6 +527,7 @@ app.listen(PORT, () => {
   console.log('    POST   /api/v1/generate/batch');
   console.log('    POST   /api/v1/leads');
   console.log('    GET    /api/v1/account (requires JWT)');
+  console.log('    DELETE /api/v1/account (requires JWT - GDPR)');
   console.log('    POST   /api/v1/api-keys (requires JWT)');
   console.log('    GET    /api/v1/usage (requires JWT)\n');
 });
