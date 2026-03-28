@@ -35,7 +35,7 @@ import {
 } from './db.js';
 import { sendLeadNotification } from './mailer.js';
 import { validateRequest, loginSchema, registerSchema, createApiKeySchema, generatePreviewSchema, generateBatchSchema, leadSchema } from './src/schemas.js';
-import { register, login, getAccount, createAccountApiKey } from './src/auth-service.js';
+import { register, login, getAccount, createAccountApiKey, refreshAccessToken } from './src/auth-service.js';
 import { requireAuth, requireApiKey, requireAuthEither, attachAccountId } from './src/auth-middleware.js';
 import { recordAudit, getClientIp, AUDIT_EVENTS } from './src/audit-service.js';
 import { validationError, unauthorizedError, notFoundError, ERROR_CODES } from './src/error-handler.js';
@@ -221,7 +221,8 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
 
     res.json({
       ok: true,
-      token: result.token,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       account: result.account,
     });
   } catch (err) {
@@ -230,6 +231,26 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
     console.log(`[audit] Login failed for ${validation.data.email} from ${ip}`);
 
     res.status(401).json(unauthorizedError('Invalid email or password'));
+  }
+});
+
+// Refresh access token
+app.post('/api/v1/auth/refresh', publicLimiter, (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json(validationError({ refreshToken: 'Refresh token is required' }));
+  }
+
+  try {
+    const result = refreshAccessToken(refreshToken);
+    res.json({
+      ok: true,
+      accessToken: result.accessToken,
+      account: result.account,
+    });
+  } catch (err) {
+    res.status(401).json(unauthorizedError('Invalid or expired refresh token'));
   }
 });
 
@@ -584,6 +605,7 @@ app.listen(PORT, () => {
   console.log('  Endpoints:');
   console.log('    POST   /api/v1/auth/register');
   console.log('    POST   /api/v1/auth/login');
+  console.log('    POST   /api/v1/auth/refresh (refresh access token)');
   console.log('    POST   /api/v1/generate/preview');
   console.log('    POST   /api/v1/generate/batch');
   console.log('    POST   /api/v1/leads');

@@ -11,7 +11,8 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   process.exit(1);
 }
 
-const JWT_EXPIRES_IN = '1h';  // Reduced from 24h for security
+const JWT_EXPIRES_IN = '1h';  // Short-lived access token
+const JWT_REFRESH_EXPIRES_IN = '30d';  // Long-lived refresh token
 const API_KEY_PREFIX = 'sk_';
 const API_KEY_EXPIRES_IN_DAYS = 365;  // API keys expire after 1 year
 
@@ -86,14 +87,22 @@ export async function login(email, password) {
     throw new Error('Invalid email or password');
   }
 
-  const token = jwt.sign(
-    { accountId: account.id, email: account.email, tier: account.tier },
+  // Generate both access and refresh tokens
+  const accessToken = jwt.sign(
+    { accountId: account.id, email: account.email, tier: account.tier, type: 'access' },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
 
+  const refreshToken = jwt.sign(
+    { accountId: account.id, email: account.email, type: 'refresh' },
+    JWT_SECRET,
+    { expiresIn: JWT_REFRESH_EXPIRES_IN }
+  );
+
   return {
-    token,
+    accessToken,
+    refreshToken,
     account: {
       id: account.id,
       email: account.email,
@@ -109,6 +118,42 @@ export function verifyToken(token) {
     return jwt.verify(token, JWT_SECRET);
   } catch (err) {
     return null;
+  }
+}
+
+// Refresh access token using refresh token
+export function refreshAccessToken(refreshToken) {
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+
+    // Ensure it's actually a refresh token
+    if (decoded.type !== 'refresh') {
+      throw new Error('Invalid token type');
+    }
+
+    // Generate new access token
+    const account = getAccountById.get(decoded.accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    const accessToken = jwt.sign(
+      { accountId: account.id, email: account.email, tier: account.tier, type: 'access' },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    return {
+      accessToken,
+      account: {
+        id: account.id,
+        email: account.email,
+        organization: account.organization,
+        tier: account.tier,
+      },
+    };
+  } catch (err) {
+    throw new Error('Failed to refresh token');
   }
 }
 
