@@ -56,6 +56,21 @@ import {
 // Utilities
 import { sendLeadNotification } from './mailer.js';
 
+// Rate limiter imports
+import {
+  publicLimiter,
+  authLimiter,
+  leadsLimiter,
+  apiLimiter,
+} from './src/rate-limiter.js';
+
+// API key service
+import {
+  createAccountApiKey,
+  revokeAccountApiKey,
+  listAccountApiKeys,
+} from './src/api-key-service.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -202,7 +217,7 @@ app.get('/api/health', (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 // Register new account
-app.post('/api/v1/auth/register', async (req, res) => {
+app.post('/api/v1/auth/register', authLimiter, async (req, res) => {
   const validation = validateRequest(registerSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -250,7 +265,7 @@ app.post('/api/v1/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/v1/auth/login', async (req, res) => {
+app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
   const validation = validateRequest(loginSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -378,6 +393,105 @@ app.delete('/api/v1/account', requireAuth, (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// API KEY MANAGEMENT
+// ─────────────────────────────────────────────────────────────
+
+// Create API key
+app.post('/api/v1/api-keys', requireAuth, (req, res) => {
+  const validation = validateRequest(createApiKeySchema, req.body);
+  if (!validation.valid) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Validation failed',
+      code: 'VALIDATION_FAILED',
+      errors: validation.errors,
+    });
+  }
+
+  try {
+    const { name } = validation.data;
+    const apiKey = createAccountApiKey(req.auth.accountId, name);
+
+    recordAudit.run(
+      req.auth.accountId,
+      'API_KEY_CREATED',
+      'api_key',
+      apiKey.id,
+      getClientIp(req),
+      req.headers['user-agent'],
+      new Date().toISOString()
+    );
+
+    res.status(201).json({
+      ok: true,
+      message: 'API key created successfully',
+      apiKey,
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to create API key',
+      code: 'KEY_ERROR',
+    });
+  }
+});
+
+// List API keys
+app.get('/api/v1/api-keys', requireAuth, (req, res) => {
+  try {
+    const keys = listAccountApiKeys(req.auth.accountId);
+
+    res.status(200).json({
+      ok: true,
+      keys,
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to retrieve API keys',
+      code: 'KEY_ERROR',
+    });
+  }
+});
+
+// Revoke API key
+app.delete('/api/v1/api-keys/:id', requireAuth, (req, res) => {
+  const keyId = parseInt(req.params.id, 10);
+  if (!Number.isInteger(keyId) || keyId <= 0) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Invalid key ID',
+      code: 'INVALID_ID',
+    });
+  }
+
+  try {
+    revokeAccountApiKey(keyId, req.auth.accountId);
+
+    recordAudit.run(
+      req.auth.accountId,
+      'API_KEY_REVOKED',
+      'api_key',
+      keyId,
+      getClientIp(req),
+      req.headers['user-agent'],
+      new Date().toISOString()
+    );
+
+    res.status(200).json({
+      ok: true,
+      message: 'API key revoked successfully',
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to revoke API key',
+      code: 'KEY_ERROR',
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
 // DATA GENERATION ENDPOINTS
 // ─────────────────────────────────────────────────────────────
 
@@ -413,7 +527,7 @@ app.post('/api/v1/generate/preview', attachAccountId, (req, res) => {
 });
 
 // Generate batch (requires API key)
-app.post('/api/v1/generate/batch', requireApiKey, (req, res) => {
+app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
   const validation = validateRequest(generateBatchSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
