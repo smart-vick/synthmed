@@ -211,7 +211,7 @@
 <div id="toast"></div>
 
 <script>
-const API = 'http://localhost:3000';
+const API = ''; // Use relative URL (same domain)
 let adminKey = '';
 let allLeads = [];
 
@@ -239,7 +239,7 @@ document.getElementById('admin-key').addEventListener('keydown', e => {
 async function loadData() {
   try {
     // Load leads
-    const res = await fetch(`${API}/api/leads`, {
+    const res = await fetch(`${API}/api/v1/admin/leads`, {
       headers: { 'x-admin-key': adminKey }
     });
 
@@ -256,7 +256,7 @@ async function loadData() {
     allLeads = data.leads || [];
 
     // Load health for preview count
-    const health = await fetch(`${API}/api/health`).then(r => r.json());
+    const health = await fetch(`${API}/api/v1/health`).then(r => r.json());
 
     updateStats(health.previews_generated || 0);
     renderTable();
@@ -337,7 +337,7 @@ async function markContacted(id) { await markStatus(id, 'contacted'); }
 
 async function markStatus(id, status) {
   try {
-    const res = await fetch(`${API}/api/leads/${id}/status`, {
+    const res = await fetch(`${API}/api/v1/admin/leads/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
       body: JSON.stringify({ status })

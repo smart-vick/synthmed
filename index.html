@@ -1304,9 +1304,9 @@ document.getElementById('contact-form').addEventListener('submit',async function
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast('Please enter a valid email address.');return;}
   btn.disabled=true;btn.textContent='Sending…';
   try{
-    const res=await fetch('http://localhost:3000/api/sample-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,organization:org,role:document.getElementById('f-role').value,message:document.getElementById('f-msg').value})});
+    const res=await fetch('/api/v1/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,organization:org,role:document.getElementById('f-role').value,message:document.getElementById('f-msg').value})});
     const data=await res.json();
-    if(data.success==='true'||data.success===true){
+    if(data.ok===true){
       document.getElementById('form-success').style.display='flex';
       this.reset();
     } else {
