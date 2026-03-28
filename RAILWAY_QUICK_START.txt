@@ -1,0 +1,151 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    RAILWAY DEPLOYMENT - QUICK START (15 MINS)
+═══════════════════════════════════════════════════════════════════════════════
+
+STEP 1: GENERATE SECRETS (2 mins)
+─────────────────────────────────
+Run these commands in your terminal:
+
+  node -e "console.log('JWT_SECRET:', require('crypto').randomBytes(32).toString('hex'))"
+  node -e "console.log('ADMIN_KEY:', require('crypto').randomBytes(32).toString('hex'))"
+
+SAVE THE OUTPUT! You'll need these in Railway.
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 2: CREATE RAILWAY ACCOUNT (3 mins)
+───────────────────────────────────────
+1. Go to: https://railway.app
+2. Click "Sign Up"
+3. Select "Sign up with GitHub"
+4. Authorize Railway
+5. You're in!
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 3: CREATE PROJECT (2 mins)
+───────────────────────────────
+1. Click "+ New Project"
+2. Select "GitHub Repo"
+3. Search "synthmed"
+4. Click: smart-vick/synthmed
+5. Branch: claude/install-everything-claude-plugin-6NYW2
+6. Click "Create"
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 4: SET ENVIRONMENT VARIABLES (5 mins)
+───────────────────────────────────────────
+In Railway dashboard:
+1. Click "synthmed" service
+2. Click "Variables" tab
+3. Add these variables:
+
+   Variable Name          | Value
+   ───────────────────────┼────────────────────────────
+   JWT_SECRET             | (paste from Step 1)
+   ADMIN_KEY              | (paste from Step 1)
+   NODE_ENV               | production
+   PORT                   | 3000
+   ALLOWED_ORIGINS        | https://synthmed-{random}.up.railway.app
+
+   (Replace {random} with your actual Railway URL once deployed)
+
+4. Click "Save" for each
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 5: DEPLOY (3 mins)
+──────────────────────
+1. Go to "Deployments" tab
+2. Click "Deploy" button (or wait for auto-deploy)
+3. Status changes from "Building" → "Deploying" → "Success"
+4. Copy your live URL (looks like: synthmed-{random}.up.railway.app)
+
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 6: TEST IT WORKS (3 mins)
+──────────────────────────────
+Replace {URL} with your Railway URL:
+
+TEST 1 - Health Check:
+  curl https://{URL}/api/health
+
+  Should return: {"ok":true,"service":"synthmed-api",...}
+
+TEST 2 - Register User:
+  curl -X POST https://{URL}/api/v1/auth/register \
+    -H "Content-Type: application/json" \
+    -d '{"email":"test@example.com","organization":"Test","password":"SecurePass123!","confirmPassword":"SecurePass123!"}'
+
+  Should return: {"ok":true,"account":{...}}
+
+TEST 3 - Login:
+  curl -X POST https://{URL}/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"test@example.com","password":"SecurePass123!"}'
+
+  Should return: {"ok":true,"accessToken":"..."}
+
+───────────────────────────────────────────────────────────────────────────────
+
+🎉 YOU'RE LIVE!
+
+Your API is now running on Railway!
+
+API Base URL: https://{URL}
+
+All endpoints available:
+  ✅ /api/health
+  ✅ /api/v1/auth/* (register, login, refresh)
+  ✅ /api/v1/api-keys (create, list, delete)
+  ✅ /api/v1/generate/* (preview, batch)
+  ✅ /api/v1/leads (capture)
+  ✅ /api/v1/usage (stats)
+  ✅ /api/v1/pricing (info)
+  ✅ /api/v1/admin/* (lead management)
+
+───────────────────────────────────────────────────────────────────────────────
+
+NEXT STEPS:
+
+1. Test the full flow:
+   - Register → Login → Create API Key → Generate Data
+
+2. Optional - Enable Payments (add to Variables):
+   - STRIPE_SECRET_KEY
+   - STRIPE_WEBHOOK_SECRET
+   - STRIPE_PRODUCT_STARTER
+   - STRIPE_PRICE_STARTER
+   - STRIPE_PRODUCT_PRO
+   - STRIPE_PRICE_PRO
+
+3. Optional - Email Notifications:
+   - MAIL_USER=your-email@gmail.com
+   - MAIL_PASS=your-gmail-app-password
+
+4. Monitor in Railway:
+   - Click "Logs" to see real-time logs
+   - Click "Metrics" to see CPU/memory usage
+
+───────────────────────────────────────────────────────────────────────────────
+
+TROUBLESHOOTING:
+
+❌ Deployment failed?
+   → Check "Logs" tab for error messages
+   → Most common: Missing environment variables
+
+❌ API returns 500?
+   → Check "Logs" tab
+   → Likely: JWT_SECRET or ADMIN_KEY not set
+
+❌ Can't register user?
+   → Make sure NODE_ENV=production
+   → Check ALLOWED_ORIGINS matches your URL
+
+───────────────────────────────────────────────────────────────────────────────
+
+Questions? See: RAILWAY_DEPLOYMENT_GUIDE.md (detailed version)
+
+═══════════════════════════════════════════════════════════════════════════════
