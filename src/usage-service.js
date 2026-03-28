@@ -1,4 +1,4 @@
-import { recordUsage, getUsageByAccount, getUsageStats } from '../db.js';
+import { recordUsage, getUsageByAccount, getUsageStats as getUsageStatsDb } from '../db.js';
 
 // Pricing tiers (in cents per 1000 records)
 const TIER_PRICING = {
@@ -64,7 +64,7 @@ export function getUsageStats(accountId) {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   try {
-    const result = getUsageStats.get(accountId, thirtyDaysAgo);
+    const result = getUsageStatsDb.get(accountId, thirtyDaysAgo);
     return {
       totalRequests: result.total_requests || 0,
       totalRecords: result.total_records || 0,
