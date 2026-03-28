@@ -27,14 +27,16 @@ export function requireAuth(req, res, next) {
   next();
 }
 
-// Middleware: API key authentication
+// Middleware: API key authentication - CRITICAL FIX: Only accept from header, not query string
 export function requireApiKey(req, res, next) {
-  const apiKey = req.headers['x-api-key'] || req.query.api_key;
+  // CRITICAL: Only accept from 'x-api-key' header, NOT from query string
+  // Query strings are logged in access logs and browser history
+  const apiKey = req.headers['x-api-key'];
 
   if (!apiKey) {
     return res.status(401).json({
       ok: false,
-      error: 'Missing API key',
+      error: 'Missing API key. Use x-api-key header',
       code: 'MISSING_API_KEY',
     });
   }

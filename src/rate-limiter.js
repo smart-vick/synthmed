@@ -25,11 +25,33 @@ export const authLimiter = rateLimit({
   },
 });
 
-// API rate limiter (tier-aware)
+// API rate limiter (tier-aware) with memory leak prevention
 export function createApiLimiter() {
   const store = new Map(); // Simple in-memory store
 
-  return (req, res, next) => {
+  // CRITICAL FIX: Clean up memory every 5 minutes to prevent unbounded growth
+  const cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    const hourAgo = now - 60 * 60 * 1000;
+    let cleanedCount = 0;
+
+    for (const [accountId, timestamps] of store.entries()) {
+      const filtered = timestamps.filter(t => t > hourAgo);
+      if (filtered.length === 0) {
+        store.delete(accountId);  // Remove completely empty entries
+        cleanedCount++;
+      } else {
+        store.set(accountId, filtered);
+      }
+    }
+
+    if (cleanedCount > 0) {
+      console.log(`[rate-limiter] Cleaned ${cleanedCount} expired account entries`);
+    }
+  }, 5 * 60 * 1000);  // Every 5 minutes
+
+  // Return cleanup function for testing
+  return Object.assign((req, res, next) => {
     if (!req.auth) {
       return publicLimiter(req, res, next);
     }
@@ -82,7 +104,7 @@ export function createApiLimiter() {
     }
 
     next();
-  };
+  }, { __cleanup: () => clearInterval(cleanupInterval) });
 }
 
 export const apiLimiter = createApiLimiter();

@@ -1,15 +1,28 @@
 import { z } from 'zod';
 
-// Auth Schemas
+// Auth Schemas - IMPROVED: Stronger password requirements
+const emailSchema = z.string()
+  .email('Invalid email address')
+  .toLowerCase()
+  .refine(email => !email.includes('..'), 'Invalid email format')
+  .refine(email => email.length > 5, 'Email too short');
+
+const passwordSchema = z.string()
+  .min(12, 'Password must be at least 12 characters')  // Increased from 8
+  .regex(/[a-z]/, 'Password must contain lowercase letters')
+  .regex(/[A-Z]/, 'Password must contain uppercase letters')
+  .regex(/[0-9]/, 'Password must contain numbers')
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain special character');
+
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: emailSchema,
+  password: z.string().min(1, 'Password required'),
 });
 
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  organization: z.string().min(2, 'Organization name must be at least 2 characters'),
-  password: z.string().min(8, 'Password must be at least 8 characters').regex(/[A-Z]/, 'Password must contain an uppercase letter').regex(/[0-9]/, 'Password must contain a number'),
+  email: emailSchema,
+  organization: z.string().min(2, 'Organization name must be at least 2 characters').max(200),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Passwords do not match',

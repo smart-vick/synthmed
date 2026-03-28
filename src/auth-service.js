@@ -3,8 +3,14 @@ import bcryptjs from 'bcryptjs';
 import crypto from 'crypto';
 import { createAccount, getAccountByEmail, getAccountById, createApiKey, getApiKeyByKey, updateApiKeyLastUsed } from '../db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '24h';
+// CRITICAL: JWT_SECRET must be set in environment - no fallback
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.error('\n❌ FATAL: JWT_SECRET environment variable not set or too short (min 32 chars)\n');
+  process.exit(1);
+}
+
+const JWT_EXPIRES_IN = '1h';  // Reduced from 24h for security
 const API_KEY_PREFIX = 'sk_';
 
 // Hash password
@@ -47,15 +53,17 @@ export async function register(email, organization, password) {
   }
 }
 
-// Login
+// Login - with timing attack prevention
 export async function login(email, password) {
   const account = getAccountByEmail.get(email);
-  if (!account) {
-    throw new Error('Invalid email or password');
-  }
 
-  const passwordValid = await verifyPassword(password, account.password_hash);
-  if (!passwordValid) {
+  // CRITICAL FIX: Always run bcrypt comparison, even if account doesn't exist
+  // This prevents timing attacks that can enumerate valid emails
+  const dummyHash = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36P4/KfK';
+  const passwordValid = await verifyPassword(password, account?.password_hash || dummyHash);
+
+  // After timing-constant comparison, check if account exists
+  if (!account || !passwordValid) {
     throw new Error('Invalid email or password');
   }
 

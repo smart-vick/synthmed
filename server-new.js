@@ -4,6 +4,24 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+// CRITICAL: Validate required environment variables
+const REQUIRED_ENV_VARS = ['JWT_SECRET', 'ADMIN_KEY'];
+const missing = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error(`\n❌ FATAL: Missing required environment variables: ${missing.join(', ')}\n`);
+  process.exit(1);
+}
+
+if (process.env.JWT_SECRET.length < 32) {
+  console.error('\n❌ FATAL: JWT_SECRET must be at least 32 characters\n');
+  process.exit(1);
+}
+
+if (process.env.ADMIN_KEY.length < 32) {
+  console.error('\n❌ FATAL: ADMIN_KEY must be at least 32 characters\n');
+  process.exit(1);
+}
 import {
   insertLead,
   getAllLeads,
@@ -24,10 +42,32 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── SECURITY ────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:'],
+    },
+  },
+}));
+
+// CRITICAL FIX: Proper CORS validation with trimming
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost'];
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost'],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  optionsSuccessStatus: 200,
 }));
 
 // ── PARSING ─────────────────────────────────────────────────
@@ -103,16 +143,28 @@ function generateRecord({ province, conditionCategory }) {
 // ─── PUBLIC ENDPOINTS ──────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
 
-// Health check
+// Health check - CRITICAL FIX: Actually verify database is working
 app.get('/api/health', (req, res) => {
-  const count = getPreviewCount().count;
-  res.json({
-    ok: true,
-    service: 'synthmed-api',
-    version: 'v1',
-    uptime_seconds: Math.floor(process.uptime()),
-    previews_generated: count,
-  });
+  try {
+    const count = getPreviewCount().count;
+    res.json({
+      ok: true,
+      service: 'synthmed-api',
+      version: 'v1',
+      uptime_seconds: Math.floor(process.uptime()),
+      previews_generated: count,
+      database: 'healthy',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('[health-check] Database error:', err.message);
+    res.status(503).json({
+      ok: false,
+      error: 'Database connection failed',
+      service: 'synthmed-api',
+      database: 'unhealthy',
+    });
+  }
 });
 
 // ══════════════════════════════════════════════════════════════
@@ -259,9 +311,9 @@ app.post('/api/v1/generate/preview', publicLimiter, (req, res) => {
     generated_at: new Date().toISOString(),
   });
 
-  // Track usage if authenticated
+  // Track usage if authenticated - CRITICAL FIX: Pass tier for accurate billing
   if (req.auth) {
-    trackUsage(req.auth.accountId, req.auth.apiKeyId, '/api/v1/generate/preview', 1);
+    trackUsage(req.auth.accountId, req.auth.apiKeyId, '/api/v1/generate/preview', 1, req.auth.tier);
   }
 
   res.json({
@@ -291,8 +343,8 @@ app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
     generateRecord({ province, conditionCategory })
   );
 
-  // Track usage
-  trackUsage(req.auth.accountId, req.auth.apiKeyId, '/api/v1/generate/batch', count);
+  // Track usage - CRITICAL FIX: Pass tier for accurate billing
+  trackUsage(req.auth.accountId, req.auth.apiKeyId, '/api/v1/generate/batch', count, req.auth.tier);
 
   if (format === 'json') {
     return res.json({
@@ -306,12 +358,31 @@ app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
     });
   }
 
-  // CSV format
-  const headers = Object.keys(records[0]).join(',');
-  const rows = records.map(r => Object.values(r).join(',')).join('\n');
+  // CSV format - CRITICAL FIX: Proper CSV escaping to prevent injection
+  function escapeCSVValue(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
 
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename="synthmed_batch_${count}records.csv"`);
+    // Prevent formula injection (=, +, @, -)
+    if (/^[=+@-]/.test(str)) {
+      return "'" + str;
+    }
+
+    // If contains comma, quote, or newline, wrap in quotes and escape quotes
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+
+    return str;
+  }
+
+  const headers = Object.keys(records[0]).map(escapeCSVValue).join(',');
+  const rows = records
+    .map(r => Object.values(r).map(escapeCSVValue).join(','))
+    .join('\n');
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="synthmed_batch_${count}_records.csv"`);
   res.send(`${headers}\n${rows}`);
 });
 
@@ -362,8 +433,10 @@ app.post('/api/v1/leads', publicLimiter, async (req, res) => {
 // ─── ADMIN ENDPOINTS ────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
 
+// CRITICAL FIX: No default fallback for admin key - use already-validated ADMIN_KEY
 const adminOnly = (req, res, next) => {
-  if (req.headers['x-admin-key'] !== (process.env.ADMIN_KEY || 'dev-only')) {
+  const providedKey = req.headers['x-admin-key'];
+  if (!providedKey || providedKey !== ADMIN_KEY) {
     return res.status(403).json({ ok: false, error: 'Forbidden' });
   }
   next();
@@ -375,23 +448,32 @@ app.get('/api/v1/admin/leads', adminOnly, (req, res) => {
   res.json({ ok: true, count: leads.length, leads });
 });
 
-// Get lead by ID
+// Get lead by ID - CRITICAL FIX: Validate ID is a positive integer
 app.get('/api/v1/admin/leads/:id', adminOnly, (req, res) => {
-  const lead = getLeadById.get(req.params.id);
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ ok: false, error: 'Invalid lead ID' });
+  }
+  const lead = getLeadById.get(id);
   if (!lead) {
     return res.status(404).json({ ok: false, error: 'Lead not found' });
   }
   res.json({ ok: true, lead });
 });
 
-// Update lead status
+// Update lead status - CRITICAL FIX: Validate ID is a positive integer
 app.patch('/api/v1/admin/leads/:id/status', adminOnly, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ ok: false, error: 'Invalid lead ID' });
+  }
+
   const { status } = req.body ?? {};
   const allowed = ['new', 'contacted', 'closed'];
   if (!allowed.includes(status)) {
     return res.status(400).json({ ok: false, error: 'Invalid status' });
   }
-  updateLeadStatus.run(status, req.params.id);
+  updateLeadStatus.run(status, id);
   res.json({ ok: true, message: `Lead updated to ${status}` });
 });
 

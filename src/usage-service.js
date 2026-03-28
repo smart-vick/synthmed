@@ -31,9 +31,10 @@ export function calculateCost(tier, recordsGenerated) {
   return Math.ceil((recordsGenerated / 1000) * pricing.costPerThousand);
 }
 
-// Track API usage
-export function trackUsage(accountId, apiKeyId, endpoint, recordsGenerated = 1) {
-  const costCents = calculateCost('free', recordsGenerated); // Default to free tier cost
+// Track API usage - CRITICAL FIX: Now accepts actual tier for accurate billing
+export function trackUsage(accountId, apiKeyId, endpoint, recordsGenerated = 1, tier = 'free') {
+  // CRITICAL: Use the actual tier, not hardcoded 'free'
+  const costCents = calculateCost(tier, recordsGenerated);
   const now = new Date().toISOString();
 
   try {
@@ -50,6 +51,7 @@ export function trackUsage(accountId, apiKeyId, endpoint, recordsGenerated = 1) 
       id: result.lastInsertRowid,
       recordsGenerated,
       costCents,
+      tier,
     };
   } catch (err) {
     console.error('[usage-service] Failed to track usage:', err.message);
