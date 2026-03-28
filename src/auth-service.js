@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import bcryptjs from 'bcryptjs';
 import crypto from 'crypto';
-import { createAccount, getAccountByEmail, getAccountById, createApiKey, getApiKeyByKey, updateApiKeyLastUsed } from '../db.js';
+import { createAccount, getAccountByEmail, getAccountById, createApiKey, getApiKeyByKey, updateApiKeyLastUsed, logAudit } from '../db.js';
+import { withTransaction } from './transaction-helper.js';
 
 // CRITICAL: JWT_SECRET must be set in environment - no fallback
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -35,20 +36,37 @@ export async function register(email, organization, password) {
   const now = new Date().toISOString();
 
   try {
-    const result = createAccount.run({
-      email,
-      organization,
-      password_hash: passwordHash,
-      created_at: now,
+    // Use transaction to ensure account creation is atomic
+    const account = withTransaction(() => {
+      const result = createAccount.run({
+        email,
+        organization,
+        password_hash: passwordHash,
+        created_at: now,
+      });
+
+      const accountId = result.lastInsertRowid;
+
+      // Log account creation in transaction
+      logAudit.run({
+        account_id: accountId,
+        action: 'account_created',
+        resource: 'accounts',
+        resource_id: accountId,
+        ip_address: 'system',
+        created_at: now,
+      });
+
+      return {
+        id: accountId,
+        email,
+        organization,
+        tier: 'free',
+        status: 'active',
+      };
     });
 
-    return {
-      id: result.lastInsertRowid,
-      email,
-      organization,
-      tier: 'free',
-      status: 'active',
-    };
+    return account;
   } catch (err) {
     throw new Error('Failed to create account');
   }
@@ -106,21 +124,38 @@ export function createAccountApiKey(accountId, name) {
   const expiresAt = new Date(now.getTime() + API_KEY_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   try {
-    const result = createApiKey.run({
-      key,
-      account_id: accountId,
-      name,
-      expires_at: expiresAt,
-      created_at: now.toISOString(),
+    // Use transaction to ensure API key creation is atomic
+    const apiKey = withTransaction(() => {
+      const result = createApiKey.run({
+        key,
+        account_id: accountId,
+        name,
+        expires_at: expiresAt,
+        created_at: now.toISOString(),
+      });
+
+      const apiKeyId = result.lastInsertRowid;
+
+      // Log API key creation in transaction
+      logAudit.run({
+        account_id: accountId,
+        action: 'api_key_created',
+        resource: 'api_keys',
+        resource_id: apiKeyId,
+        ip_address: 'system',
+        created_at: now.toISOString(),
+      });
+
+      return {
+        id: apiKeyId,
+        key,
+        name,
+        createdAt: now.toISOString(),
+        expiresAt,
+      };
     });
 
-    return {
-      id: result.lastInsertRowid,
-      key,
-      name,
-      createdAt: now.toISOString(),
-      expiresAt,
-    };
+    return apiKey;
   } catch (err) {
     throw new Error('Failed to create API key');
   }
