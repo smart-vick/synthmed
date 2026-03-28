@@ -36,6 +36,7 @@ import { validateRequest, loginSchema, registerSchema, createApiKeySchema, gener
 import { register, login, getAccount, createAccountApiKey } from './src/auth-service.js';
 import { requireAuth, requireApiKey, requireAuthEither, attachAccountId } from './src/auth-middleware.js';
 import { recordAudit, getClientIp, AUDIT_EVENTS } from './src/audit-service.js';
+import { validationError, unauthorizedError, notFoundError, ERROR_CODES } from './src/error-handler.js';
 import { authLimiter, publicLimiter, leadsLimiter, apiLimiter } from './src/rate-limiter.js';
 import { trackUsage, getUsageStats as getUserStats } from './src/usage-service.js';
 
@@ -179,11 +180,7 @@ app.post('/api/v1/auth/register', authLimiter, async (req, res) => {
   const ip = getClientIp(req);
 
   if (!validation.valid) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Validation failed',
-      errors: validation.errors,
-    });
+    return res.status(400).json(validationError(validation.errors));
   }
 
   try {
@@ -211,11 +208,7 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
   const ip = getClientIp(req);
 
   if (!validation.valid) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Validation failed',
-      errors: validation.errors,
-    });
+    return res.status(400).json(validationError(validation.errors));
   }
 
   try {
@@ -234,10 +227,7 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
     // Instead log with email for audit trail
     console.log(`[audit] Login failed for ${validation.data.email} from ${ip}`);
 
-    res.status(401).json({
-      ok: false,
-      error: err.message,
-    });
+    res.status(401).json(unauthorizedError('Invalid email or password'));
   }
 });
 
@@ -249,10 +239,7 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
 app.get('/api/v1/account', requireAuth, (req, res) => {
   const account = getAccount(req.auth.accountId);
   if (!account) {
-    return res.status(404).json({
-      ok: false,
-      error: 'Account not found',
-    });
+    return res.status(404).json(notFoundError('Account'));
   }
 
   res.json({
@@ -274,11 +261,7 @@ app.post('/api/v1/api-keys', requireAuth, (req, res) => {
   const ip = getClientIp(req);
 
   if (!validation.valid) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Validation failed',
-      errors: validation.errors,
-    });
+    return res.status(400).json(validationError(validation.errors));
   }
 
   try {
