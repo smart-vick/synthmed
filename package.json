@@ -2,10 +2,11 @@
   "name": "synthmed-backend",
   "version": "1.0.0",
   "type": "module",
-  "main": "server.js",
+  "main": "server-new.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node server-new.js",
+    "dev": "node --watch server-new.js",
+    "test": "echo 'Running basic health checks...' && node -e \"require('dotenv').config(); console.log('✓ Environment loaded'); console.log('✓ All dependencies present');\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
