@@ -12,6 +12,7 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
 
 const JWT_EXPIRES_IN = '1h';  // Reduced from 24h for security
 const API_KEY_PREFIX = 'sk_';
+const API_KEY_EXPIRES_IN_DAYS = 365;  // API keys expire after 1 year
 
 // Hash password
 export async function hashPassword(password) {
@@ -101,21 +102,24 @@ export function generateApiKey() {
 // Create API key for account
 export function createAccountApiKey(accountId, name) {
   const key = generateApiKey();
-  const now = new Date().toISOString();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + API_KEY_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   try {
     const result = createApiKey.run({
       key,
       account_id: accountId,
       name,
-      created_at: now,
+      expires_at: expiresAt,
+      created_at: now.toISOString(),
     });
 
     return {
       id: result.lastInsertRowid,
       key,
       name,
-      createdAt: now,
+      createdAt: now.toISOString(),
+      expiresAt,
     };
   } catch (err) {
     throw new Error('Failed to create API key');
@@ -128,6 +132,11 @@ export function verifyApiKey(key) {
     const apiKey = getApiKeyByKey.get(key);
     if (!apiKey) {
       return null;
+    }
+
+    // Check if key is expired
+    if (apiKey.expires_at && new Date(apiKey.expires_at) < new Date()) {
+      return null;  // Key is expired
     }
 
     // Update last used

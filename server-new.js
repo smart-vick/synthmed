@@ -30,6 +30,8 @@ import {
   insertPreviewEvent,
   getPreviewCount,
   deleteAccount,
+  revokeApiKey,
+  getApiKeysByAccount,
 } from './db.js';
 import { sendLeadNotification } from './mailer.js';
 import { validateRequest, loginSchema, registerSchema, createApiKeySchema, generatePreviewSchema, generateBatchSchema, leadSchema } from './src/schemas.js';
@@ -279,6 +281,54 @@ app.post('/api/v1/api-keys', requireAuth, (req, res) => {
       ok: false,
       error: err.message,
     });
+  }
+});
+
+// List API keys for account
+app.get('/api/v1/api-keys', requireAuth, (req, res) => {
+  try {
+    const keys = getApiKeysByAccount.all(req.auth.accountId);
+    const keysList = keys.map(key => ({
+      id: key.id,
+      name: key.name,
+      key: key.key.substring(0, 10) + '****' + key.key.substring(key.key.length - 4), // Masked
+      createdAt: key.created_at,
+      expiresAt: key.expires_at,
+      lastUsedAt: key.last_used_at,
+      isExpired: key.expires_at ? new Date(key.expires_at) < new Date() : false,
+    }));
+
+    res.json({
+      ok: true,
+      keys: keysList,
+    });
+  } catch (err) {
+    console.error('[list-api-keys]', err);
+    res.status(500).json(validationError({ general: 'Failed to list API keys' }));
+  }
+});
+
+// Revoke API key
+app.delete('/api/v1/api-keys/:id', requireAuth, (req, res) => {
+  try {
+    const keyId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(keyId) || keyId <= 0) {
+      return res.status(400).json(validationError({ id: 'Invalid key ID' }));
+    }
+
+    const ip = getClientIp(req);
+    revokeApiKey.run(keyId, req.auth.accountId);
+
+    // Log API key deletion
+    recordAudit(req.auth.accountId, AUDIT_EVENTS.API_KEY_DELETED, 'api_keys', keyId, ip);
+
+    res.json({
+      ok: true,
+      message: 'API key revoked successfully',
+    });
+  } catch (err) {
+    console.error('[revoke-api-key]', err);
+    res.status(500).json(validationError({ general: 'Failed to revoke API key' }));
   }
 });
 
@@ -540,5 +590,7 @@ app.listen(PORT, () => {
   console.log('    GET    /api/v1/account (requires JWT)');
   console.log('    DELETE /api/v1/account (requires JWT - GDPR)');
   console.log('    POST   /api/v1/api-keys (requires JWT)');
+  console.log('    GET    /api/v1/api-keys (requires JWT - list with expiry)');
+  console.log('    DELETE /api/v1/api-keys/:id (requires JWT - revoke)');
   console.log('    GET    /api/v1/usage (requires JWT)\n');
 });

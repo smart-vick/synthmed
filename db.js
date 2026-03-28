@@ -33,9 +33,11 @@ db.exec(`
     account_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     last_used_at TEXT,
+    expires_at TEXT,
     created_at TEXT NOT NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id)
   );
+
 
   CREATE TABLE IF NOT EXISTS usage_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,10 +90,12 @@ export const getAccountById = db.prepare('SELECT * FROM accounts WHERE id = ?');
 export const updateAccountTier = db.prepare('UPDATE accounts SET tier = ? WHERE id = ?');
 
 // API Keys
-export const createApiKey = db.prepare('INSERT INTO api_keys (key, account_id, name, created_at) VALUES (@key, @account_id, @name, @created_at)');
+export const createApiKey = db.prepare('INSERT INTO api_keys (key, account_id, name, expires_at, created_at) VALUES (@key, @account_id, @name, @expires_at, @created_at)');
 export const getApiKeyByKey = db.prepare('SELECT ak.*, a.id as account_id, a.tier FROM api_keys ak JOIN accounts a ON ak.account_id = a.id WHERE ak.key = ?');
 export const getApiKeysByAccount = db.prepare('SELECT * FROM api_keys WHERE account_id = ? ORDER BY created_at DESC');
 export const updateApiKeyLastUsed = db.prepare('UPDATE api_keys SET last_used_at = ? WHERE id = ?');
+export const revokeApiKey = db.prepare('DELETE FROM api_keys WHERE id = ? AND account_id = ?');
+export const rotateApiKey = db.prepare('UPDATE api_keys SET key = @new_key, expires_at = @expires_at WHERE id = ? AND account_id = ?');
 
 // Usage Tracking
 export const recordUsage = db.prepare('INSERT INTO usage_events (account_id, api_key_id, endpoint, records_generated, cost_cents, created_at) VALUES (@account_id, @api_key_id, @endpoint, @records_generated, @cost_cents, @created_at)');
