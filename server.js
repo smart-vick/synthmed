@@ -71,6 +71,16 @@ import {
   listAccountApiKeys,
 } from './src/api-key-service.js';
 
+// Payment service
+import {
+  createCheckoutSession,
+  getCheckoutSession,
+  createPortalSession,
+  handleWebhookEvent,
+  verifyWebhookSignature,
+  getPricingInfo,
+} from './src/payment-service.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -661,6 +671,270 @@ app.post('/api/v1/leads', attachAccountId, (req, res) => {
       ok: false,
       error: 'Failed to capture lead',
       code: 'LEAD_ERROR',
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// USAGE & STATS ENDPOINTS
+// ─────────────────────────────────────────────────────────────
+
+// Get usage stats for authenticated user
+app.get('/api/v1/usage', requireAuth, (req, res) => {
+  try {
+    // Get last 30 days usage
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const usage = db.prepare(`
+      SELECT
+        COUNT(*) as total_requests,
+        SUM(records_generated) as total_records,
+        endpoint as endpoint_name
+      FROM usage_events
+      WHERE account_id = ? AND timestamp >= ?
+      GROUP BY endpoint
+      ORDER BY total_requests DESC
+    `).all(req.auth.accountId, thirtyDaysAgo.toISOString());
+
+    const totalStats = db.prepare(`
+      SELECT
+        COUNT(*) as total_requests,
+        COALESCE(SUM(records_generated), 0) as total_records
+      FROM usage_events
+      WHERE account_id = ? AND timestamp >= ?
+    `).get(req.auth.accountId, thirtyDaysAgo.toISOString());
+
+    // Get account tier for pricing
+    const account = getAccountById.get(req.auth.accountId);
+
+    // Calculate estimated cost based on tier
+    const costPerRecord = {
+      free: 0,
+      starter: 0.0005, // $0.50 per 1000
+      pro: 0.00025,    // $0.25 per 1000
+      enterprise: 0,   // Custom pricing
+    };
+
+    const costMultiplier = costPerRecord[account.tier] || 0;
+    const estimatedCostCents = Math.ceil((totalStats.total_records || 0) * costMultiplier * 100);
+
+    res.status(200).json({
+      ok: true,
+      usage: {
+        last_30_days: {
+          total_requests: totalStats.total_requests || 0,
+          total_records: totalStats.total_records || 0,
+          estimated_cost_cents: estimatedCostCents,
+          estimated_cost_dollars: (estimatedCostCents / 100).toFixed(2),
+          by_endpoint: usage || [],
+        },
+        current_tier: account.tier,
+        tier_limits: {
+          free: '1,000 records/month',
+          starter: '50,000 records/month ($25/mo)',
+          pro: '500,000 records/month ($125/mo)',
+          enterprise: 'Custom',
+        },
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to retrieve usage stats',
+      code: 'STATS_ERROR',
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// BILLING & PAYMENT ENDPOINTS
+// ─────────────────────────────────────────────────────────────
+
+// Get pricing information (public)
+app.get('/api/v1/pricing', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    pricing: getPricingInfo(),
+  });
+});
+
+// Create Stripe checkout session
+app.post('/api/v1/billing/checkout', requireAuth, async (req, res) => {
+  const { tier, successUrl, cancelUrl } = req.body;
+
+  if (!tier || !['starter', 'pro', 'enterprise'].includes(tier)) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Invalid tier',
+      code: 'INVALID_TIER',
+    });
+  }
+
+  if (!successUrl || !cancelUrl) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Success and cancel URLs required',
+      code: 'MISSING_URLS',
+    });
+  }
+
+  try {
+    const session = await createCheckoutSession(
+      req.auth.accountId,
+      req.auth.email,
+      tier,
+      successUrl,
+      cancelUrl
+    );
+
+    recordAudit.run(
+      req.auth.accountId,
+      'CHECKOUT_SESSION_CREATED',
+      'subscription',
+      null,
+      getClientIp(req),
+      req.headers['user-agent'],
+      new Date().toISOString()
+    );
+
+    res.status(200).json({
+      ok: true,
+      checkout: session,
+    });
+  } catch (err) {
+    if (err.code === 'STRIPE_NOT_CONFIGURED') {
+      return res.status(503).json({
+        ok: false,
+        error: 'Payment processing not configured',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to create checkout session',
+      code: 'CHECKOUT_ERROR',
+    });
+  }
+});
+
+// Get checkout session status
+app.get('/api/v1/billing/checkout/:sessionId', requireAuth, async (req, res) => {
+  const { sessionId } = req.params;
+
+  if (!sessionId) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Session ID required',
+      code: 'MISSING_SESSION_ID',
+    });
+  }
+
+  try {
+    const session = await getCheckoutSession(sessionId);
+
+    res.status(200).json({
+      ok: true,
+      session: {
+        id: session.id,
+        status: session.payment_status,
+        customer_email: session.customer_email,
+        subscription: session.subscription?.id || null,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to retrieve session',
+      code: 'SESSION_ERROR',
+    });
+  }
+});
+
+// Get customer portal URL
+app.post('/api/v1/billing/portal', requireAuth, async (req, res) => {
+  const { returnUrl } = req.body;
+
+  if (!returnUrl) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Return URL required',
+      code: 'MISSING_RETURN_URL',
+    });
+  }
+
+  try {
+    // In production, you'd store the Stripe customer ID in the accounts table
+    // For now, we generate a placeholder
+    const stripeCustomerId = `cus_${req.auth.accountId}_${Date.now()}`;
+
+    const portal = await createPortalSession(stripeCustomerId, returnUrl);
+
+    res.status(200).json({
+      ok: true,
+      portal,
+    });
+  } catch (err) {
+    if (err.code === 'STRIPE_NOT_CONFIGURED') {
+      return res.status(503).json({
+        ok: false,
+        error: 'Payment processing not configured',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to create portal session',
+      code: 'PORTAL_ERROR',
+    });
+  }
+});
+
+// Stripe webhook handler (raw body required for signature verification)
+app.post('/webhooks/stripe', express.raw({type: 'application/json'}), async (req, res) => {
+  const signature = req.headers['stripe-signature'];
+
+  if (!signature) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Missing Stripe signature',
+      code: 'MISSING_SIGNATURE',
+    });
+  }
+
+  try {
+    const event = verifyWebhookSignature(req.body, signature);
+
+    // Extract account ID from event metadata
+    const accountId = event.data?.object?.metadata?.accountId ||
+      event.data?.object?.subscription?.metadata?.accountId;
+
+    await handleWebhookEvent(event, parseInt(accountId, 10) || null);
+
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('[webhook] Error:', err.message);
+
+    if (err.code === 'INVALID_SIGNATURE') {
+      return res.status(403).json({
+        ok: false,
+        error: 'Invalid signature',
+        code: 'INVALID_SIGNATURE',
+      });
+    }
+
+    if (err.code === 'STRIPE_NOT_CONFIGURED') {
+      return res.status(503).json({
+        ok: false,
+        error: 'Stripe not configured',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+
+    res.status(500).json({
+      ok: false,
+      error: 'Webhook processing failed',
+      code: 'WEBHOOK_ERROR',
     });
   }
 });
