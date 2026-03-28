@@ -35,6 +35,7 @@ import { sendLeadNotification } from './mailer.js';
 import { validateRequest, loginSchema, registerSchema, createApiKeySchema, generatePreviewSchema, generateBatchSchema, leadSchema } from './src/schemas.js';
 import { register, login, getAccount, createAccountApiKey } from './src/auth-service.js';
 import { requireAuth, requireApiKey, requireAuthEither, attachAccountId } from './src/auth-middleware.js';
+import { recordAudit, getClientIp, AUDIT_EVENTS } from './src/audit-service.js';
 import { authLimiter, publicLimiter, leadsLimiter, apiLimiter } from './src/rate-limiter.js';
 import { trackUsage, getUsageStats as getUserStats } from './src/usage-service.js';
 
@@ -175,6 +176,8 @@ app.get('/api/health', (req, res) => {
 // Register
 app.post('/api/v1/auth/register', authLimiter, async (req, res) => {
   const validation = validateRequest(registerSchema, req.body);
+  const ip = getClientIp(req);
+
   if (!validation.valid) {
     return res.status(400).json({
       ok: false,
@@ -185,6 +188,10 @@ app.post('/api/v1/auth/register', authLimiter, async (req, res) => {
 
   try {
     const account = await register(validation.data.email, validation.data.organization, validation.data.password);
+
+    // Log account creation
+    recordAudit(account.id, AUDIT_EVENTS.ACCOUNT_CREATED, 'accounts', account.id, ip);
+
     res.status(201).json({
       ok: true,
       message: 'Account created successfully',
@@ -201,6 +208,8 @@ app.post('/api/v1/auth/register', authLimiter, async (req, res) => {
 // Login
 app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
   const validation = validateRequest(loginSchema, req.body);
+  const ip = getClientIp(req);
+
   if (!validation.valid) {
     return res.status(400).json({
       ok: false,
@@ -211,12 +220,20 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
 
   try {
     const result = await login(validation.data.email, validation.data.password);
+
+    // Log successful login
+    recordAudit(result.account.id, AUDIT_EVENTS.LOGIN_SUCCESS, 'auth', 'login', ip);
+
     res.json({
       ok: true,
       token: result.token,
       account: result.account,
     });
   } catch (err) {
+    // Log failed login attempt (don't log specific account ID since we don't know it yet)
+    // Instead log with email for audit trail
+    console.log(`[audit] Login failed for ${validation.data.email} from ${ip}`);
+
     res.status(401).json({
       ok: false,
       error: err.message,
@@ -254,6 +271,8 @@ app.get('/api/v1/account', requireAuth, (req, res) => {
 // Create API key
 app.post('/api/v1/api-keys', requireAuth, (req, res) => {
   const validation = validateRequest(createApiKeySchema, req.body);
+  const ip = getClientIp(req);
+
   if (!validation.valid) {
     return res.status(400).json({
       ok: false,
@@ -264,6 +283,10 @@ app.post('/api/v1/api-keys', requireAuth, (req, res) => {
 
   try {
     const apiKey = createAccountApiKey(req.auth.accountId, validation.data.name);
+
+    // Log API key creation
+    recordAudit(req.auth.accountId, AUDIT_EVENTS.API_KEY_CREATED, 'api_keys', apiKey.id, ip);
+
     res.status(201).json({
       ok: true,
       apiKey,
@@ -289,6 +312,11 @@ app.get('/api/v1/usage', requireAuth, (req, res) => {
 app.delete('/api/v1/account', requireAuth, (req, res) => {
   try {
     const accountId = req.auth.accountId;
+    const ip = getClientIp(req);
+
+    // Log account deletion before it's deleted
+    recordAudit(accountId, AUDIT_EVENTS.ACCOUNT_DELETED, 'accounts', accountId, ip);
+
     deleteAccount(accountId);
 
     res.json({
