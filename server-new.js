@@ -34,7 +34,7 @@ import { sendLeadNotification } from './mailer.js';
 import { validateRequest, loginSchema, registerSchema, createApiKeySchema, generatePreviewSchema, generateBatchSchema, leadSchema } from './src/schemas.js';
 import { register, login, getAccount, createAccountApiKey } from './src/auth-service.js';
 import { requireAuth, requireApiKey, requireAuthEither, attachAccountId } from './src/auth-middleware.js';
-import { authLimiter, publicLimiter, apiLimiter } from './src/rate-limiter.js';
+import { authLimiter, publicLimiter, leadsLimiter, apiLimiter } from './src/rate-limiter.js';
 import { trackUsage, getUsageStats as getUserStats } from './src/usage-service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -391,7 +391,7 @@ app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
 // ══════════════════════════════════════════════════════════════
 
 // Submit lead
-app.post('/api/v1/leads', publicLimiter, async (req, res) => {
+app.post('/api/v1/leads', leadsLimiter, async (req, res) => {
   const validation = validateRequest(leadSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({

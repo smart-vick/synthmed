@@ -25,6 +25,17 @@ export const authLimiter = rateLimit({
   },
 });
 
+// Very strict rate limiter for lead capture (prevent spam/abuse)
+export const leadsLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // limit each IP to 5 leads per hour
+  message: {
+    ok: false,
+    error: 'Too many lead submissions, please try again in an hour',
+    code: 'LEADS_RATE_LIMIT',
+  },
+});
+
 // API rate limiter (tier-aware) with memory leak prevention
 export function createApiLimiter() {
   const store = new Map(); // Simple in-memory store
