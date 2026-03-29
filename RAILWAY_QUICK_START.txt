@@ -121,7 +121,7 @@ NEXT STEPS:
    - STRIPE_PRICE_PRO
 
 3. Optional - Email Notifications:
-   - MAIL_USER=your-email@gmail.com
+   - MAIL_USER=vk800772@gmail.com
    - MAIL_PASS=your-gmail-app-password
 
 4. Monitor in Railway:

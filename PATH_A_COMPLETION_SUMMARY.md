@@ -234,7 +234,7 @@ STRIPE_PRICE_PRO=price_...
 
 3. **Email Configuration (Optional - lead notifications):**
 ```
-MAIL_USER=your-email@gmail.com
+MAIL_USER=vk800772@gmail.com
 MAIL_PASS=gmail-app-password
 ```
 
