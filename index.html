@@ -1,1334 +1,823 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SynthMed — Synthetic Patient Data for Healthcare AI</title>
-<meta name="description" content="PIPEDA-aligned synthetic Canadian patient data for healthcare AI teams. Realistic, compliant, delivered in 48 hours.">
-<meta property="og:title" content="SynthMed — Synthetic Patient Data for Healthcare AI">
-<meta property="og:description" content="Train your healthcare AI on realistic synthetic Canadian patient records. Designed with compliance frameworks in mind.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* ─── RESET & TOKENS ─────────────────────────────────────────── */
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --ink:       #0f1923;
-  --ink-2:     #3d4f5e;
-  --ink-3:     #6b7f8e;
-  --ink-4:     #9badb9;
-  --rule:      #dde4ea;
-  --surface:   #ffffff;
-  --surface-2: #f5f7f9;
-  --surface-3: #edf0f3;
-  --teal:      #0a7ea4;
-  --teal-light:#e6f4f9;
-  --teal-mid:  #b3dce9;
-  --teal-dark: #075f7d;
-  --green:     #0d7b5e;
-  --green-light:#e6f4f0;
-  --amber:     #b45309;
-  --amber-light:#fef3cd;
-  --red:       #b91c1c;
-  --radius-sm: 6px;
-  --radius:    10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --shadow-sm: 0 1px 3px rgba(15,25,35,.06),0 1px 2px rgba(15,25,35,.04);
-  --shadow:    0 4px 16px rgba(15,25,35,.08),0 1px 4px rgba(15,25,35,.04);
-  --shadow-lg: 0 16px 48px rgba(15,25,35,.12),0 4px 12px rgba(15,25,35,.06);
-  --font-display:'DM Serif Display',Georgia,serif;
-  --font-body:  'DM Sans',system-ui,sans-serif;
-  --font-mono:  'DM Mono',monospace;
-  --max-w:     1160px;
-  --nav-h:     64px;
-}
-html{scroll-behavior:smooth;font-size:16px;}
-body{font-family:var(--font-body);background:var(--surface);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;}
-img{max-width:100%;display:block;}
-a{color:inherit;text-decoration:none;}
-button,input,textarea,select{font-family:inherit;font-size:inherit;}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SynthMed — Enterprise Synthetic Medical Data</title>
+  <meta name="description" content="Enterprise-grade HIPAA-compliant synthetic medical data platform. Generate realistic patient records for healthcare AI development and testing.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-/* ─── UTILITY ────────────────────────────────────────────────── */
-.container{max-width:var(--max-w);margin:0 auto;padding:0 24px;}
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid transparent;line-height:1;}
-.btn-primary{background:var(--teal);color:#fff;border-color:var(--teal);}
-.btn-primary:hover{background:var(--teal-dark);border-color:var(--teal-dark);}
-.btn-outline{background:transparent;color:var(--ink);border-color:var(--rule);}
-.btn-outline:hover{border-color:var(--ink-3);background:var(--surface-2);}
-.btn-ghost{background:transparent;color:var(--teal);border:none;padding-left:0;padding-right:0;}
-.btn-ghost:hover{color:var(--teal-dark);}
-.btn-lg{padding:14px 32px;font-size:15px;}
-.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;}
-.tag-teal{background:var(--teal-light);color:var(--teal-dark);}
-.tag-green{background:var(--green-light);color:var(--green);}
-.tag-amber{background:var(--amber-light);color:var(--amber);}
-.section-label{font-size:12px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:12px;}
-.section-h2{font-family:var(--font-display);font-size:clamp(28px,3.5vw,44px);line-height:1.15;color:var(--ink);margin-bottom:16px;}
-.section-lead{font-size:17px;color:var(--ink-2);line-height:1.75;max-width:520px;}
-.divider{height:1px;background:var(--rule);border:none;margin:0;}
-.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
-.reveal.visible{opacity:1;transform:translateY(0);}
-.reveal-delay-1{transition-delay:.1s;}
-.reveal-delay-2{transition-delay:.2s;}
-.reveal-delay-3{transition-delay:.3s;}
+  <style>
+    /* ━━━ RESET & VARIABLES ━━━ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ─── NAV ────────────────────────────────────────────────────── */
-#nav{
-  position:fixed;top:0;left:0;right:0;z-index:1000;
-  height:var(--nav-h);
-  background:rgba(255,255,255,.92);
-  backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--rule);
-  transition:box-shadow .2s;
-}
-#nav.scrolled{box-shadow:var(--shadow-sm);}
-.nav-inner{
-  max-width:var(--max-w);margin:0 auto;padding:0 24px;
-  height:100%;display:flex;align-items:center;justify-content:space-between;gap:32px;
-}
-.nav-logo{display:flex;align-items:baseline;gap:3px;font-family:var(--font-display);font-size:22px;color:var(--ink);}
-.nav-logo span{color:var(--teal);}
-.nav-links{display:flex;align-items:center;gap:4px;}
-.nav-links a{padding:8px 14px;font-size:14px;font-weight:500;color:var(--ink-2);border-radius:var(--radius-sm);transition:color .15s,background .15s;}
-.nav-links a:hover{color:var(--ink);background:var(--surface-2);}
-.nav-links a.active{color:var(--teal);background:var(--teal-light);}
-.nav-actions{display:flex;align-items:center;gap:10px;}
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;border:none;background:none;}
-.hamburger span{width:22px;height:2px;background:var(--ink);border-radius:2px;transition:all .25s;}
-.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
-.hamburger.open span:nth-child(2){opacity:0;}
-.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
-#mobile-menu{
-  display:none;position:fixed;top:var(--nav-h);left:0;right:0;bottom:0;
-  background:var(--surface);z-index:999;padding:24px;
-  overflow-y:auto;flex-direction:column;gap:8px;
-}
-#mobile-menu.open{display:flex;}
-#mobile-menu a{padding:14px 16px;font-size:16px;font-weight:500;color:var(--ink);border-radius:var(--radius);border-bottom:1px solid var(--rule);}
-#mobile-menu a:hover{background:var(--surface-2);}
-#mobile-menu .mobile-actions{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+    :root {
+      --primary: #0066cc;
+      --primary-dark: #0052a3;
+      --primary-light: #e6f0ff;
+      --secondary: #00cc88;
+      --dark: #0f1419;
+      --dark-2: #1a1f2e;
+      --dark-3: #2a3142;
+      --light: #f0f2f5;
+      --light-2: #e0e3e9;
+      --border: #d0d5e0;
+      --text: #1a1f2e;
+      --text-secondary: #626f86;
+      --text-light: #8b95a7;
 
-/* ─── HERO ───────────────────────────────────────────────────── */
-#hero{
-  padding-top:calc(var(--nav-h) + 80px);
-  padding-bottom:80px;
-  background:linear-gradient(180deg,var(--surface-2) 0%,var(--surface) 100%);
-  border-bottom:1px solid var(--rule);
-}
-.hero-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
-.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-light);}
-.hero-eyebrow span{font-size:13px;font-weight:500;color:var(--ink-2);}
-.hero-h1{font-family:var(--font-display);font-size:clamp(36px,5vw,68px);line-height:1.05;color:var(--ink);margin-bottom:24px;max-width:720px;}
-.hero-h1 em{font-style:italic;color:var(--teal);}
-.hero-sub{font-size:18px;color:var(--ink-2);line-height:1.75;max-width:540px;margin-bottom:40px;}
-.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:56px;}
-.hero-proof{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
-.proof-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-3);}
-.proof-item svg{flex-shrink:0;color:var(--teal);}
-.hero-visual{
-  background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-xl);
-  box-shadow:var(--shadow-lg);overflow:hidden;
-}
-.hero-layout{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
-.data-card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);}
-.data-card-header{padding:14px 18px;background:var(--surface-2);border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;}
-.dc-dot{width:9px;height:9px;border-radius:50%;}
-.data-card-body{padding:18px;}
-.data-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--rule);font-size:13px;}
-.data-row:last-child{border:none;}
-.data-key{color:var(--ink-3);font-family:var(--font-mono);}
-.data-val{color:var(--ink);font-weight:500;font-family:var(--font-mono);}
-.data-val.green{color:var(--green);}
-.data-val.teal{color:var(--teal);}
-.data-val.amber{color:var(--amber);}
-.generate-btn{width:100%;margin-top:14px;justify-content:center;}
+      --radius-sm: 6px;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
 
-/* ─── TRUST STRIP ────────────────────────────────────────────── */
-#trust{padding:40px 0;background:var(--surface);border-bottom:1px solid var(--rule);}
-.trust-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;}
-.trust-label{font-size:12px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-4);white-space:nowrap;}
-.trust-items{display:flex;align-items:center;gap:32px;flex-wrap:wrap;}
-.trust-item{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--ink-2);}
-.trust-item svg{color:var(--teal);flex-shrink:0;}
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+      --shadow: 0 8px 24px rgba(0,0,0,0.1);
+      --shadow-lg: 0 20px 40px rgba(0,0,0,0.15);
 
-/* ─── HOW IT WORKS ───────────────────────────────────────────── */
-#how{padding:100px 0;background:var(--surface);}
-.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:56px;}
-.how-card{
-  background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);
-  padding:32px;transition:box-shadow .2s;
-}
-.how-card:hover{box-shadow:var(--shadow);}
-.how-step{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--teal-light);color:var(--teal-dark);
-  font-size:14px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  margin-bottom:20px;
-}
-.how-title{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:8px;}
-.how-desc{font-size:14px;color:var(--ink-2);line-height:1.7;}
-.how-detail{margin-top:14px;padding-top:14px;border-top:1px solid var(--rule);}
-.how-detail ul{list-style:none;display:flex;flex-direction:column;gap:6px;}
-.how-detail li{font-size:13px;color:var(--ink-3);display:flex;align-items:flex-start;gap:8px;}
-.how-detail li::before{content:'→';color:var(--teal);font-size:12px;margin-top:2px;flex-shrink:0;}
+      --font-mono: 'JetBrains Mono', monospace;
+    }
 
-/* ─── COMPLIANCE ─────────────────────────────────────────────── */
-#compliance{padding:80px 0;background:var(--surface-2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);}
-.compliance-layout{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;}
-.compliance-note{
-  background:var(--amber-light);border:1px solid #f3c87e;border-radius:var(--radius);
-  padding:14px 16px;font-size:13px;color:var(--amber);
-  display:flex;gap:10px;align-items:flex-start;margin-top:24px;
-}
-.compliance-pillars{display:flex;flex-direction:column;gap:16px;}
-.pillar{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:24px;}
-.pillar-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-.pillar-icon{width:40px;height:40px;border-radius:var(--radius);background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.pillar-title{font-size:15px;font-weight:600;color:var(--ink);}
-.pillar-sub{font-size:13px;color:var(--ink-3);}
-.pillar-body{font-size:13px;color:var(--ink-2);line-height:1.65;}
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #ffffff;
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
 
-/* ─── FEATURES ───────────────────────────────────────────────── */
-#features{padding:100px 0;background:var(--surface);}
-.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px;}
-.feat{background:var(--surface-2);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:28px;transition:all .2s;}
-.feat:hover{background:var(--surface);box-shadow:var(--shadow);border-color:var(--teal-mid);}
-.feat-icon{width:44px;height:44px;border-radius:var(--radius);background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:18px;}
-.feat-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;}
-.feat-desc{font-size:13px;color:var(--ink-2);line-height:1.65;}
-.feat-pills{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;}
-.feat-pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px;background:var(--teal-light);color:var(--teal-dark);}
+    /* ━━━ TYPOGRAPHY ━━━ */
+    h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.2; }
+    h1 { font-size: clamp(32px, 5vw, 56px); }
+    h2 { font-size: clamp(28px, 4vw, 44px); }
+    h3 { font-size: clamp(22px, 3vw, 32px); }
+    p { color: var(--text-secondary); line-height: 1.7; }
 
-/* ─── DEMO ───────────────────────────────────────────────────── */
-#demo{padding:100px 0;background:var(--surface-2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);}
-.demo-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:56px;align-items:start;margin-top:56px;}
-.demo-controls{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-xl);padding:32px;}
-.demo-controls h3{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:20px;}
-.demo-filter-row{display:flex;flex-direction:column;gap:14px;margin-bottom:24px;}
-.demo-label{font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:6px;display:block;}
-.demo-select{width:100%;padding:10px 14px;border:1.5px solid var(--rule);border-radius:var(--radius);font-size:14px;color:var(--ink);background:var(--surface);outline:none;appearance:none;cursor:pointer;}
-.demo-select:focus{border-color:var(--teal);}
-.demo-count-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--rule);}
-.demo-count-label{font-size:13px;color:var(--ink-2);}
-.demo-count-val{font-size:22px;font-weight:700;color:var(--teal);font-family:var(--font-mono);}
-.demo-terminal{background:var(--ink);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);}
-.term-titlebar{background:#1e2a35;padding:14px 18px;display:flex;align-items:center;gap:8px;}
-.term-dot{width:11px;height:11px;border-radius:50%;}
-.term-filename{font-family:var(--font-mono);font-size:12px;color:#4a5c6a;margin-left:8px;}
-.term-body{padding:24px;min-height:360px;font-family:var(--font-mono);font-size:13px;}
-.term-comment{color:#4a5c6a;}
-.term-field{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);}
-.term-field:last-of-type{border:none;}
-.term-key{color:#7ba7b8;}
-.term-val{color:#7fcea3;font-weight:500;}
-.term-val.accent{color:#f4b860;}
-.term-status{margin-top:16px;font-size:12px;color:#4a5c6a;display:flex;align-items:center;gap:8px;}
-.term-status.ok{color:#7fcea3;}
-.fade-in{animation:fadeIn .4s ease forwards;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+    a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--primary-dark); }
 
-/* ─── USE CASES ──────────────────────────────────────────────── */
-#usecases{padding:100px 0;background:var(--surface);}
-.usecase-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-top:56px;}
-.uc-card{border:1px solid var(--rule);border-radius:var(--radius-lg);padding:32px;transition:all .2s;position:relative;overflow:hidden;}
-.uc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--teal);opacity:0;transition:opacity .2s;}
-.uc-card:hover{box-shadow:var(--shadow);border-color:var(--teal-mid);}
-.uc-card:hover::before{opacity:1;}
-.uc-icon{font-size:28px;margin-bottom:16px;}
-.uc-title{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:8px;}
-.uc-desc{font-size:14px;color:var(--ink-2);line-height:1.7;margin-bottom:16px;}
-.uc-tags{display:flex;flex-wrap:wrap;gap:6px;}
+    /* ━━━ BUTTONS ━━━ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
 
-/* ─── PRICING ────────────────────────────────────────────────── */
-#pricing{padding:100px 0;background:var(--surface-2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);}
-.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px;max-width:960px;}
-.plan{background:var(--surface);border:1.5px solid var(--rule);border-radius:var(--radius-xl);padding:36px 28px;position:relative;transition:box-shadow .2s;}
-.plan:hover{box-shadow:var(--shadow);}
-.plan.featured{border-color:var(--teal);box-shadow:var(--shadow);}
-.plan-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:999px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;}
-.plan-tier{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;}
-.plan-price{font-size:48px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:4px;}
-.plan-price.teal{color:var(--teal);}
-.plan-cycle{font-size:13px;color:var(--ink-3);margin-bottom:28px;}
-.plan-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px;}
-.plan-list li{font-size:14px;color:var(--ink-2);display:flex;align-items:flex-start;gap:10px;}
-.plan-list li svg{flex-shrink:0;color:var(--teal);margin-top:2px;}
-.plan-cta{display:block;text-align:center;padding:13px;border-radius:var(--radius);font-size:14px;font-weight:600;transition:all .2s;cursor:pointer;border:1.5px solid var(--rule);background:transparent;color:var(--ink);}
-.plan-cta:hover{border-color:var(--ink-2);background:var(--surface-2);}
-.plan-cta.primary{background:var(--teal);color:#fff;border-color:var(--teal);}
-.plan-cta.primary:hover{background:var(--teal-dark);border-color:var(--teal-dark);}
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
 
-/* ─── FAQ ────────────────────────────────────────────────────── */
-#faq{padding:100px 0;background:var(--surface);}
-.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:56px;}
-details{background:var(--surface-2);border:1px solid var(--rule);border-radius:var(--radius-lg);overflow:hidden;transition:box-shadow .2s;}
-details[open]{box-shadow:var(--shadow-sm);}
-summary{
-  padding:20px 24px;font-size:15px;font-weight:500;color:var(--ink);
-  cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;
-}
-summary::-webkit-details-marker{display:none;}
-summary::after{content:'＋';font-size:18px;color:var(--teal);line-height:1;flex-shrink:0;transition:transform .2s;}
-details[open] summary::after{transform:rotate(45deg);}
-details .faq-body{padding:0 24px 20px;font-size:14px;color:var(--ink-2);line-height:1.75;}
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 102, 204, 0.3);
+    }
 
-/* ─── CONTACT ────────────────────────────────────────────────── */
-#contact{padding:100px 0;background:var(--surface-2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);}
-.contact-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:64px;align-items:start;}
-.contact-info h2{margin-bottom:16px;}
-.contact-info .section-lead{margin-bottom:40px;}
-.contact-detail{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;}
-.cd-icon{width:40px;height:40px;border-radius:var(--radius);background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.cd-text strong{display:block;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px;}
-.cd-text span{font-size:14px;color:var(--ink-2);}
-.contact-form-card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius-xl);padding:36px;box-shadow:var(--shadow);}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-.form-group label{font-size:13px;font-weight:500;color:var(--ink-2);}
-.form-group input,.form-group textarea,.form-group select{
-  padding:11px 14px;border:1.5px solid var(--rule);border-radius:var(--radius);
-  font-size:14px;color:var(--ink);background:var(--surface);outline:none;
-  transition:border-color .15s;
-}
-.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--teal);}
-.form-group textarea{height:110px;resize:vertical;}
-.form-disclaimer{font-size:12px;color:var(--ink-4);margin-top:4px;line-height:1.6;}
-.form-success{display:none;background:var(--green-light);border:1px solid #7ecfb4;border-radius:var(--radius);padding:16px;font-size:14px;color:var(--green);align-items:center;gap:10px;}
-.form-error{display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:var(--radius);padding:16px;font-size:14px;color:var(--red);align-items:center;gap:10px;}
+    .btn-secondary {
+      background: var(--light);
+      color: var(--primary);
+      border: 2px solid var(--border);
+    }
 
-/* ─── LEGAL PAGES ────────────────────────────────────────────── */
-.page-section{display:none;padding-top:calc(var(--nav-h) + 60px);padding-bottom:80px;min-height:100vh;}
-.page-section.active{display:block;}
-.legal-container{max-width:760px;margin:0 auto;padding:0 24px;}
-.legal-container h1{font-family:var(--font-display);font-size:clamp(28px,4vw,44px);margin-bottom:8px;}
-.legal-meta{font-size:13px;color:var(--ink-3);margin-bottom:40px;}
-.legal-container h2{font-size:20px;font-weight:600;color:var(--ink);margin:36px 0 12px;}
-.legal-container p{font-size:15px;color:var(--ink-2);line-height:1.8;margin-bottom:16px;}
-.legal-container ul{margin:0 0 16px 20px;}
-.legal-container ul li{font-size:15px;color:var(--ink-2);line-height:1.8;margin-bottom:6px;}
-.back-link{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--teal);margin-bottom:32px;cursor:pointer;}
-.back-link:hover{color:var(--teal-dark);}
+    .btn-secondary:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
 
-/* ─── ABOUT PAGE ─────────────────────────────────────────────── */
-.about-hero{padding:80px 0 60px;border-bottom:1px solid var(--rule);}
-.about-mission{padding:80px 0;background:var(--surface-2);border-bottom:1px solid var(--rule);}
-.about-team{padding:80px 0;}
-.about-layout{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
-.value-list{list-style:none;display:flex;flex-direction:column;gap:16px;margin-top:32px;}
-.value-item{display:flex;align-items:flex-start;gap:14px;}
-.value-icon{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;}
-.value-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px;}
-.value-desc{font-size:14px;color:var(--ink-2);line-height:1.65;}
+    .btn-lg { padding: 14px 32px; font-size: 16px; }
+    .btn-sm { padding: 10px 20px; font-size: 13px; }
 
-/* ─── FOOTER ─────────────────────────────────────────────────── */
-footer{background:var(--ink);color:#fff;padding:64px 0 0;}
-.footer-inner{max-width:var(--max-w);margin:0 auto;padding:0 24px;}
-.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;padding-bottom:48px;border-bottom:1px solid rgba(255,255,255,.08);}
-.footer-brand .logo{font-family:var(--font-display);font-size:22px;color:#fff;margin-bottom:12px;display:block;}
-.footer-brand .logo span{color:var(--teal);}
-.footer-brand p{font-size:14px;color:rgba(255,255,255,.45);line-height:1.7;max-width:260px;margin-bottom:20px;}
-.footer-col h4{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:18px;}
-.footer-col a{display:block;font-size:14px;color:rgba(255,255,255,.55);margin-bottom:10px;transition:color .15s;}
-.footer-col a:hover{color:#fff;}
-.footer-bottom{padding:24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
-.footer-bottom p{font-size:13px;color:rgba(255,255,255,.3);}
-.footer-bottom a{font-size:13px;color:rgba(255,255,255,.4);}
-.footer-bottom a:hover{color:#fff;}
+    /* ━━━ LAYOUT ━━━ */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
 
-/* ─── SCROLL TO TOP ──────────────────────────────────────────── */
-#scroll-top{
-  position:fixed;bottom:24px;right:24px;z-index:90;
-  width:40px;height:40px;border-radius:50%;
-  background:var(--ink);color:#fff;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;transform:translateY(8px);
-  transition:all .25s;box-shadow:var(--shadow);
-}
-#scroll-top.show{opacity:1;transform:translateY(0);}
-#scroll-top:hover{background:var(--teal);}
+    .section {
+      padding: 80px 0;
+    }
 
-/* ─── TOAST ──────────────────────────────────────────────────── */
-#toast{
-  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-16px);
-  z-index:2000;background:var(--ink);color:#fff;
-  padding:12px 20px;border-radius:var(--radius);font-size:14px;
-  opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;
-  box-shadow:var(--shadow-lg);
-}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    .section.alt {
+      background: var(--light);
+    }
 
-/* ─── RESPONSIVE ─────────────────────────────────────────────── */
-@media(max-width:900px){
-  .nav-links,.nav-actions .btn-outline{display:none;}
-  .hamburger{display:flex;}
-  .hero-layout{grid-template-columns:1fr;}
-  .how-grid,.features-grid{grid-template-columns:1fr 1fr;}
-  .compliance-layout,.contact-layout,.about-layout{grid-template-columns:1fr;}
-  .pricing-grid{grid-template-columns:1fr;}
-  .faq-grid{grid-template-columns:1fr;}
-  .usecase-grid{grid-template-columns:1fr;}
-  .footer-top{grid-template-columns:1fr 1fr;gap:32px;}
-  .demo-layout{grid-template-columns:1fr;}
-}
-@media(max-width:600px){
-  .how-grid,.features-grid{grid-template-columns:1fr;}
-  .hero-ctas{flex-direction:column;}
-  .hero-ctas .btn{justify-content:center;}
-  .form-row{grid-template-columns:1fr;}
-  .footer-top{grid-template-columns:1fr;}
-  .trust-items{gap:16px;}
-}
-</style>
+    /* ━━━ NAVIGATION ━━━ */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      height: 70px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      flex: 1;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .nav-links a:hover { color: var(--primary); }
+
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* ━━━ HERO ━━━ */
+    .hero {
+      padding-top: 140px;
+      padding-bottom: 80px;
+      background: linear-gradient(135deg, var(--primary-light) 0%, #f0f5ff 100%);
+    }
+
+    .hero-content {
+      max-width: 700px;
+    }
+
+    .hero h1 {
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    .hero > .container > p {
+      font-size: 18px;
+      margin-bottom: 32px;
+      max-width: 600px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: white;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    /* ━━━ FEATURES GRID ━━━ */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+      margin-top: 60px;
+    }
+
+    .feature-card {
+      padding: 32px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-light);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .feature-card p {
+      font-size: 14px;
+    }
+
+    /* ━━━ PRICING ━━━ */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      margin-top: 60px;
+    }
+
+    .pricing-card {
+      padding: 40px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: white;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border: 2px solid var(--primary);
+      transform: scale(1.05);
+      box-shadow: 0 20px 40px rgba(0, 102, 204, 0.15);
+    }
+
+    .pricing-card.featured::before {
+      content: "Most Popular";
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: var(--primary);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pricing-card:hover:not(.featured) {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+
+    .price {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 20px 0;
+    }
+
+    .price span {
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+
+    .price-features {
+      list-style: none;
+      margin: 32px 0;
+    }
+
+    .price-features li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .price-features li::before {
+      content: "✓";
+      color: var(--secondary);
+      font-weight: bold;
+      width: 20px;
+    }
+
+    /* ━━━ FORM ━━━ */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* ━━━ CONTACT SECTION ━━━ */
+    .contact-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    .contact-form {
+      background: white;
+      padding: 40px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+
+    .contact-info h3 {
+      margin-bottom: 24px;
+    }
+
+    .contact-info-item {
+      margin-bottom: 32px;
+    }
+
+    .contact-info-item h4 {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .contact-info-item p {
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    /* ━━━ STATS ━━━ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      margin-top: 60px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-light);
+      letter-spacing: 0.5px;
+    }
+
+    /* ━━━ FOOTER ━━━ */
+    footer {
+      background: var(--dark);
+      color: white;
+      padding: 60px 0 40px;
+      border-top: 1px solid var(--dark-2);
+    }
+
+    footer .container {
+      max-width: 1200px;
+    }
+
+    footer a { color: #8b95a7; }
+    footer a:hover { color: var(--primary); }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--dark-2);
+    }
+
+    .footer-col h4 {
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col ul li {
+      margin-bottom: 12px;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    /* ━━━ RESPONSIVE ━━━ */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .contact-wrapper { grid-template-columns: 1fr; }
+      .pricing-card.featured { transform: scale(1); }
+      .footer-bottom { flex-direction: column; gap: 20px; text-align: center; }
+
+      body { padding-top: 70px; }
+      .hero { padding-top: 40px; padding-bottom: 40px; }
+      .section { padding: 40px 0; }
+    }
+
+    /* ━━━ ANIMATIONS ━━━ */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in { animation: fadeInUp 0.6s ease; }
+  </style>
 </head>
+
 <body>
-
-<!-- ─── NAV ─────────────────────────────────────────────────── -->
-<nav id="nav" role="navigation" aria-label="Main navigation">
-  <div class="nav-inner">
-    <a href="#" class="nav-logo" onclick="showPage('home');return false;" aria-label="SynthMed Home">
-      <span>Synth</span>Med
-    </a>
-    <div class="nav-links">
-      <a href="#" onclick="showPage('home');return false;" class="active" data-page="home">Home</a>
-      <a href="#" onclick="showPage('about');return false;" data-page="about">About</a>
-      <a href="#" onclick="scrollToSection('features');return false;">Product</a>
-      <a href="#" onclick="scrollToSection('pricing');return false;">Pricing</a>
-      <a href="#" onclick="scrollToSection('contact');return false;">Contact</a>
+  <!-- ━━━ NAVIGATION ━━━ -->
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">🧬 SynthMed</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#contact">Contact</a>
+        <a href="/admin.html">Admin</a>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-secondary btn-sm">Sign In</button>
+        <button class="btn btn-primary btn-sm">Get Started</button>
+      </div>
     </div>
-    <div class="nav-actions">
-      <a href="#" class="btn btn-outline" onclick="scrollToSection('contact');return false;">Get Access</a>
-      <a href="#" class="btn btn-primary" onclick="scrollToSection('demo');return false;">Request Sample</a>
-    </div>
-    <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" onclick="toggleMobile()">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
+  </nav>
 
-<!-- Mobile Menu -->
-<div id="mobile-menu" role="dialog" aria-label="Mobile navigation">
-  <a href="#" onclick="showPage('home');toggleMobile();return false;">Home</a>
-  <a href="#" onclick="showPage('about');toggleMobile();return false;">About</a>
-  <a href="#" onclick="scrollToSection('features');toggleMobile();return false;">Product</a>
-  <a href="#" onclick="scrollToSection('pricing');toggleMobile();return false;">Pricing</a>
-  <a href="#" onclick="scrollToSection('contact');toggleMobile();return false;">Contact</a>
-  <div class="mobile-actions">
-    <a href="#" class="btn btn-outline" onclick="scrollToSection('contact');toggleMobile();return false;">Get Access</a>
-    <a href="#" class="btn btn-primary" onclick="scrollToSection('demo');toggleMobile();return false;">Request Sample</a>
-  </div>
-</div>
-
-<!-- ─── TOAST ────────────────────────────────────────────────── -->
-<div id="toast" role="status" aria-live="polite"></div>
-<button id="scroll-top" aria-label="Scroll to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-</button>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- HOME PAGE                                                   -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<main id="page-home" class="page-section active">
-
-  <!-- HERO -->
-  <section id="hero">
-    <div class="container">
-      <div class="hero-layout">
-        <div>
-          <div class="hero-eyebrow">
-            <div class="live-dot"></div>
-            <span>Designed for Canadian Healthcare AI Teams</span>
-          </div>
-          <h1 class="hero-h1">
-            Synthetic patient data<br>built for <em>serious</em> AI work
-          </h1>
-          <p class="hero-sub">
-            Realistic, structured Canadian patient records — designed with PIPEDA and HIPAA frameworks in mind. Accelerate your healthcare AI development without touching real patient data.
-          </p>
-          <div class="hero-ctas">
-            <a href="#" class="btn btn-primary btn-lg" onclick="scrollToSection('contact');return false;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Get Free Sample Dataset
-            </a>
-            <a href="#" class="btn btn-outline btn-lg" onclick="scrollToSection('demo');return false;">
-              See Live Demo
-            </a>
-          </div>
-          <div class="hero-proof">
-            <div class="proof-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              Designed with PIPEDA frameworks
-            </div>
-            <div class="proof-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              No real patients. Ever.
-            </div>
-            <div class="proof-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-              Delivered in 48 hours
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="data-card reveal">
-            <div class="data-card-header">
-              <div class="dc-dot" style="background:#ff5f57"></div>
-              <div class="dc-dot" style="background:#febc2e"></div>
-              <div class="dc-dot" style="background:#28c840"></div>
-              <span style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-left:8px;">sample_record.json</span>
-            </div>
-            <div class="data-card-body">
-              <div class="data-row"><span class="data-key">patient_id</span><span class="data-val teal">"SYN-CA-7842"</span></div>
-              <div class="data-row"><span class="data-key">age</span><span class="data-val">"58 years"</span></div>
-              <div class="data-row"><span class="data-key">province</span><span class="data-val">"Ontario"</span></div>
-              <div class="data-row"><span class="data-key">icd10_primary</span><span class="data-val amber">"I10 — Hypertension"</span></div>
-              <div class="data-row"><span class="data-key">medication</span><span class="data-val">"Lisinopril 10mg"</span></div>
-              <div class="data-row"><span class="data-key">bp_systolic</span><span class="data-val">142</span></div>
-              <div class="data-row"><span class="data-key">glucose_mmol</span><span class="data-val">5.3</span></div>
-              <div class="data-row"><span class="data-key">los_days</span><span class="data-val">4</span></div>
-              <div class="data-row"><span class="data-key">readmit_30d</span><span class="data-val green">"No"</span></div>
-              <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rule);display:flex;align-items:center;gap:8px;">
-                <span class="tag tag-green">Synthetic</span>
-                <span style="font-size:12px;color:var(--ink-3);">Zero real patient involvement</span>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- ━━━ HERO ━━━ -->
+  <section class="hero">
+    <div class="container fade-in">
+      <div class="hero-badge">🚀 Enterprise-Grade Synthetic Data Platform</div>
+      <h1>HIPAA-Compliant Synthetic Medical Data for Healthcare AI</h1>
+      <p>Generate realistic, statistically valid patient records instantly. No privacy risks. No compliance headaches. Just production-ready data.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-lg">Request Demo</button>
+        <button class="btn btn-secondary btn-lg">View API Docs</button>
       </div>
     </div>
   </section>
 
-  <!-- TRUST STRIP -->
-  <section id="trust" aria-label="Trust indicators">
+  <!-- ━━━ FEATURES ━━━ -->
+  <section class="section" id="features">
     <div class="container">
-      <div class="trust-inner">
-        <span class="trust-label">Designed with</span>
-        <div class="trust-items">
-          <div class="trust-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            PIPEDA Frameworks
-          </div>
-          <div class="trust-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            HIPAA Guidance
-          </div>
-          <div class="trust-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            ICD-10-CA Codes
-          </div>
-          <div class="trust-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            48-Hour Delivery
-          </div>
-          <div class="trust-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            All 13 Provinces
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+      <h2>Why Enterprise Teams Choose SynthMed</h2>
+      <p style="font-size: 18px; max-width: 600px; margin-bottom: 40px;">Purpose-built for healthcare organizations that need compliant test data at scale.</p>
 
-  <hr class="divider">
-
-  <!-- HOW IT WORKS -->
-  <section id="how">
-    <div class="container">
-      <span class="section-label reveal">How It Works</span>
-      <h2 class="section-h2 reveal">From configuration to<br>deployment-ready data</h2>
-      <p class="section-lead reveal">Our generation methodology ensures statistical realism without using or deriving anything from real patient records.</p>
-      <div class="how-grid">
-        <div class="how-card reveal reveal-delay-1">
-          <div class="how-step">1</div>
-          <div class="how-title">You configure your requirements</div>
-          <div class="how-desc">Specify dataset size, provincial distribution, age demographics, condition prevalence, and output format through our intake form.</div>
-          <div class="how-detail">
-            <ul>
-              <li>Province and regional breakdown</li>
-              <li>Age and gender distribution</li>
-              <li>Condition categories</li>
-              <li>File format preferences</li>
-            </ul>
-          </div>
-        </div>
-        <div class="how-card reveal reveal-delay-2">
-          <div class="how-step">2</div>
-          <div class="how-title">We generate from statistical models</div>
-          <div class="how-desc">Our system uses probabilistic models built from anonymized population health statistics — not individual records — to produce realistic patient profiles.</div>
-          <div class="how-detail">
-            <ul>
-              <li>Epidemiological co-occurrence models</li>
-              <li>Drug-diagnosis pairing logic</li>
-              <li>Lab value distribution curves</li>
-              <li>Temporal admission modeling</li>
-            </ul>
-          </div>
-        </div>
-        <div class="how-card reveal reveal-delay-3">
-          <div class="how-step">3</div>
-          <div class="how-title">Validated and delivered securely</div>
-          <div class="how-desc">Every dataset passes automated quality validation before secure delivery. You receive structured files and a methodology summary document.</div>
-          <div class="how-detail">
-            <ul>
-              <li>Automated statistical QA checks</li>
-              <li>Clinician review for realism</li>
-              <li>Secure download with expiry</li>
-              <li>Methodology documentation</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <hr class="divider">
-
-  <!-- COMPLIANCE -->
-  <section id="compliance">
-    <div class="container">
-      <div class="compliance-layout">
-        <div>
-          <span class="section-label reveal">Compliance Approach</span>
-          <h2 class="section-h2 reveal">Built with privacy<br>frameworks in mind</h2>
-          <p class="section-lead reveal">We take an honest approach to compliance. SynthMed data is designed to support your privacy obligations — it does not replace your legal counsel or ethics review process.</p>
-          <div class="compliance-note reveal">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>SynthMed data contains no personally identifiable information. Always consult your institutional privacy officer for specific regulatory requirements.</span>
-          </div>
-        </div>
-        <div class="compliance-pillars reveal">
-          <div class="pillar">
-            <div class="pillar-head">
-              <div class="pillar-icon">🔐</div>
-              <div>
-                <div class="pillar-title">No Real Patient Data</div>
-                <div class="pillar-sub">The core guarantee</div>
-              </div>
-            </div>
-            <div class="pillar-body">Every record is generated from statistical population models. No hospital data, no de-identified records, no source patient data is used or referenced in generation.</div>
-          </div>
-          <div class="pillar">
-            <div class="pillar-head">
-              <div class="pillar-icon">📋</div>
-              <div>
-                <div class="pillar-title">PIPEDA-Aligned Design</div>
-                <div class="pillar-sub">Privacy by architecture</div>
-              </div>
-            </div>
-            <div class="pillar-body">Our data architecture follows PIPEDA fair information principles. Because no personal information is collected or used, the data falls outside PIPEDA's scope of application.</div>
-          </div>
-          <div class="pillar">
-            <div class="pillar-head">
-              <div class="pillar-icon">📄</div>
-              <div>
-                <div class="pillar-title">Methodology Documentation</div>
-                <div class="pillar-sub">Audit-ready records</div>
-              </div>
-            </div>
-            <div class="pillar-body">Every dataset ships with a methodology summary explaining how it was generated — suitable for ethics board submissions and AI project documentation.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section id="features">
-    <div class="container">
-      <span class="section-label reveal">Dataset Contents</span>
-      <h2 class="section-h2 reveal">21 clinical fields.<br>Structurally realistic.</h2>
-      <p class="section-lead reveal">Every field is designed to co-vary realistically with others — diagnoses match medications, lab values follow clinical distributions.</p>
       <div class="features-grid">
-        <div class="feat reveal reveal-delay-1">
-          <div class="feat-icon">👤</div>
-          <div class="feat-title">Patient Demographics</div>
-          <div class="feat-desc">Age, sex, province, and ethnicity distributed proportionally across all 13 Canadian provinces using census-derived weights.</div>
-          <div class="feat-pills"><span class="feat-pill">Age</span><span class="feat-pill">Province</span><span class="feat-pill">Sex</span></div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">🔒</div>
+          <h3>HIPAA Compliant</h3>
+          <p>100% synthetic data means zero privacy risk. Full compliance with healthcare regulations.</p>
         </div>
-        <div class="feat reveal reveal-delay-2">
-          <div class="feat-icon">🩺</div>
-          <div class="feat-title">ICD-10-CA Diagnoses</div>
-          <div class="feat-desc">Primary and secondary diagnoses using official Canadian ICD-10-CA coding. Prevalence rates follow Canadian Institute for Health Information benchmarks.</div>
-          <div class="feat-pills"><span class="feat-pill">ICD-10-CA</span><span class="feat-pill">Co-morbidities</span></div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">⚡</div>
+          <h3>Instant Generation</h3>
+          <p>Generate millions of records in seconds via REST API. No waiting, no manual data creation.</p>
         </div>
-        <div class="feat reveal reveal-delay-3">
-          <div class="feat-icon">💊</div>
-          <div class="feat-title">Medications & Dosages</div>
-          <div class="feat-desc">Drug names and dosages matched probabilistically to diagnosis codes using Canadian formulary data as reference.</div>
-          <div class="feat-pills"><span class="feat-pill">DIN Codes</span><span class="feat-pill">Dosage</span><span class="feat-pill">Route</span></div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">📊</div>
+          <h3>Statistically Valid</h3>
+          <p>ICD-10 codes, realistic vital signs, medications. Data your AI can actually learn from.</p>
         </div>
-        <div class="feat reveal reveal-delay-1">
-          <div class="feat-icon">🔬</div>
-          <div class="feat-title">Laboratory Values</div>
-          <div class="feat-desc">Glucose, HbA1c, creatinine, hemoglobin, and 8 additional lab fields with condition-correlated distributions based on clinical literature.</div>
-          <div class="feat-pills"><span class="feat-pill">Glucose</span><span class="feat-pill">HbA1c</span><span class="feat-pill">eGFR</span></div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">🔧</div>
+          <h3>API-First</h3>
+          <p>Easy integration. Full programmatic control. Rate limiting, API keys, webhooks included.</p>
         </div>
-        <div class="feat reveal reveal-delay-2">
-          <div class="feat-icon">🏥</div>
-          <div class="feat-title">Encounter Records</div>
-          <div class="feat-desc">Admission dates, discharge dates, and length of stay with realistic temporal patterns including seasonal variation and readmission windows.</div>
-          <div class="feat-pills"><span class="feat-pill">Admission</span><span class="feat-pill">LOS</span><span class="feat-pill">Discharge</span></div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">📈</div>
+          <h3>Enterprise Support</h3>
+          <p>Dedicated account managers. Priority support. Custom SLAs and uptime guarantees.</p>
         </div>
-        <div class="feat reveal reveal-delay-3">
-          <div class="feat-icon">📊</div>
-          <div class="feat-title">Outcome Labels</div>
-          <div class="feat-desc">30-day and 90-day readmission outcomes, mortality flags, and discharge disposition — the labels your prediction models actually need.</div>
-          <div class="feat-pills"><span class="feat-pill">30d Readmit</span><span class="feat-pill">Mortality</span><span class="feat-pill">Disposition</span></div>
+
+        <div class="feature-card fade-in">
+          <div class="feature-icon">🌍</div>
+          <h3>Canadian-Focused</h3>
+          <p>Province-level data. Real healthcare conditions. Built for Canadian healthcare systems.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <hr class="divider">
-
-  <!-- DEMO -->
-  <section id="demo">
+  <!-- ━━━ PRICING ━━━ -->
+  <section class="section alt" id="pricing">
     <div class="container">
-      <span class="section-label reveal">Interactive Preview</span>
-      <h2 class="section-h2 reveal">Generate a sample record</h2>
-      <p class="section-lead reveal">Select parameters and preview what a synthetic patient record looks like. Real datasets contain thousands of records in this format.</p>
-      <div class="demo-layout">
-        <div class="demo-controls reveal">
-          <h3>Configure Record</h3>
-          <div class="demo-filter-row">
-            <div>
-              <label class="demo-label" for="demo-province">Province</label>
-              <select id="demo-province" class="demo-select" onchange="generateRecord()">
-                <option value="random">Random (all provinces)</option>
-                <option value="ON">Ontario</option>
-                <option value="BC">British Columbia</option>
-                <option value="AB">Alberta</option>
-                <option value="QC">Quebec</option>
-                <option value="NS">Nova Scotia</option>
-                <option value="MB">Manitoba</option>
-              </select>
-            </div>
-            <div>
-              <label class="demo-label" for="demo-condition">Condition Category</label>
-              <select id="demo-condition" class="demo-select" onchange="generateRecord()">
-                <option value="random">Random</option>
-                <option value="cardiovascular">Cardiovascular</option>
-                <option value="diabetes">Diabetes / Metabolic</option>
-                <option value="respiratory">Respiratory</option>
-                <option value="mental-health">Mental Health</option>
-              </select>
-            </div>
-            <div>
-              <label class="demo-label" for="demo-format">Output Format</label>
-              <select id="demo-format" class="demo-select">
-                <option value="json">JSON</option>
-                <option value="csv">CSV</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="generateRecord()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            Generate New Record
-          </button>
-          <div class="demo-count-row">
-            <span class="demo-count-label">Records previewed this session</span>
-            <span class="demo-count-val" id="demo-count">0</span>
-          </div>
-          <p style="font-size:12px;color:var(--ink-3);margin-top:8px;line-height:1.6;">This preview generates single records. Full datasets contain 10K–1M records with consistent co-variance.</p>
-        </div>
-        <div class="demo-terminal reveal reveal-delay-1">
-          <div class="term-titlebar">
-            <div class="term-dot" style="background:#ff5f57"></div>
-            <div class="term-dot" style="background:#febc2e"></div>
-            <div class="term-dot" style="background:#28c840"></div>
-            <span class="term-filename">synthmed_preview.json</span>
-          </div>
-          <div class="term-body" id="term-body">
-            <div class="term-comment">// Select parameters above and click Generate</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+      <h2>Enterprise Pricing Built for Growth</h2>
+      <p style="font-size: 18px; max-width: 600px; margin-bottom: 40px;">Pay for what you use. Scale up as you grow. No hidden fees.</p>
 
-  <hr class="divider">
-
-  <!-- USE CASES -->
-  <section id="usecases">
-    <div class="container">
-      <span class="section-label reveal">Who It's For</span>
-      <h2 class="section-h2 reveal">Built for the teams who<br>build healthcare AI</h2>
-      <p class="section-lead reveal">Anywhere real patient data creates friction, synthetic data removes the blocker.</p>
-      <div class="usecase-grid">
-        <div class="uc-card reveal reveal-delay-1">
-          <div class="uc-icon">🏥</div>
-          <div class="uc-title">Hospital AI Teams</div>
-          <div class="uc-desc">Develop and test readmission prediction, early deterioration detection, and length-of-stay models without waiting for ethics approval on real data.</div>
-          <div class="uc-tags"><span class="tag tag-teal">Readmission Models</span><span class="tag tag-teal">LOS Prediction</span></div>
-        </div>
-        <div class="uc-card reveal reveal-delay-2">
-          <div class="uc-icon">🧬</div>
-          <div class="uc-title">Health Tech Startups</div>
-          <div class="uc-desc">Build and demo your product with realistic Canadian patient data from day one. Speed up investor demos and pilot conversations with credible-looking outputs.</div>
-          <div class="uc-tags"><span class="tag tag-teal">Product Development</span><span class="tag tag-teal">Demos</span></div>
-        </div>
-        <div class="uc-card reveal reveal-delay-1">
-          <div class="uc-icon">🎓</div>
-          <div class="uc-title">Academic Researchers</div>
-          <div class="uc-desc">Share realistic datasets with collaborators, students, and reviewers without privacy restrictions. Accelerate publication and peer review cycles.</div>
-          <div class="uc-tags"><span class="tag tag-teal">Research</span><span class="tag tag-teal">Education</span></div>
-        </div>
-        <div class="uc-card reveal reveal-delay-2">
-          <div class="uc-icon">⚙️</div>
-          <div class="uc-title">Clinical Software Vendors</div>
-          <div class="uc-desc">Use realistic patient data for QA testing, UI development, integration testing, and product demonstrations — across your entire development lifecycle.</div>
-          <div class="uc-tags"><span class="tag tag-teal">QA Testing</span><span class="tag tag-teal">Integration</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <hr class="divider">
-
-  <!-- PRICING -->
-  <section id="pricing">
-    <div class="container">
-      <span class="section-label reveal">Pricing</span>
-      <h2 class="section-h2 reveal">One-time pricing.<br>No subscriptions.</h2>
-      <p class="section-lead reveal">Pay once, own the data permanently. No recurring fees, no usage caps after delivery.</p>
       <div class="pricing-grid">
-        <div class="plan reveal reveal-delay-1">
-          <div class="plan-tier">Starter</div>
-          <div class="plan-price">$500</div>
-          <div class="plan-cycle">One-time payment</div>
-          <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>10,000 synthetic patient records</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields per record</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All 13 Canadian provinces</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV and JSON formats</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology summary document</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Email support</li>
+        <div class="pricing-card fade-in">
+          <h3>Starter</h3>
+          <div class="price">$299<span>/month</span></div>
+          <p style="margin-bottom: 24px;">Perfect for small teams and prototyping</p>
+          <ul class="price-features">
+            <li>10,000 records/month</li>
+            <li>Full API access</li>
+            <li>Email support</li>
+            <li>Standard SLA (99%)</li>
+            <li>1 API key</li>
           </ul>
-          <a href="#" class="plan-cta" onclick="scrollToSection('contact');return false;">Get Started</a>
+          <button class="btn btn-secondary" style="width: 100%; justify-content: center;">Get Started</button>
         </div>
-        <div class="plan featured reveal reveal-delay-2">
-          <div class="plan-badge">Most Popular</div>
-          <div class="plan-tier">Professional</div>
-          <div class="plan-price teal">$2,000</div>
-          <div class="plan-cycle">One-time payment</div>
-          <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100,000 synthetic patient records</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields per record</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All 13 Canadian provinces</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV, JSON, and Parquet formats</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Quality validation report</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority email support</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology documentation</li>
-          </ul>
-          <a href="#" class="plan-cta primary" onclick="scrollToSection('contact');return false;">Get Started</a>
-        </div>
-        <div class="plan reveal reveal-delay-3">
-          <div class="plan-tier">Enterprise</div>
-          <div class="plan-price">Custom</div>
-          <div class="plan-cycle">Contact for pricing</div>
-          <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1M+ patient records</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom field configuration</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom condition distributions</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All formats including custom schema</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account support</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>White-label available</li>
-          </ul>
-          <a href="#" class="plan-cta" onclick="scrollToSection('contact');return false;">Contact Us</a>
-        </div>
-      </div>
-      <p style="font-size:13px;color:var(--ink-3);margin-top:24px;">Free sample available: 1,000 records at no cost. Request via the contact form below.</p>
-    </div>
-  </section>
 
-  <!-- FAQ -->
-  <section id="faq">
-    <div class="container">
-      <span class="section-label reveal">FAQ</span>
-      <h2 class="section-h2 reveal">Common questions</h2>
-      <p class="section-lead reveal">Answers to what healthcare AI teams ask before their first order.</p>
-      <div class="faq-grid reveal">
-        <details>
-          <summary>Is this data actually compliant with PIPEDA?</summary>
-          <div class="faq-body">SynthMed data contains no personal information. Because it is entirely statistically generated and does not derive from real patient records, it falls outside PIPEDA's scope. However, we always recommend consulting your institutional privacy officer for your specific regulatory situation. We provide a methodology document with every order to support your compliance discussions.</div>
-        </details>
-        <details>
-          <summary>How is the data generated?</summary>
-          <div class="faq-body">We use probabilistic models built from published epidemiological statistics and population health benchmarks — not individual health records. Diagnoses, medications, and lab values are modeled to co-vary realistically using clinical literature and Canadian health information standards.</div>
-        </details>
-        <details>
-          <summary>What formats do you deliver in?</summary>
-          <div class="faq-body">Starter: CSV and JSON. Professional: CSV, JSON, and Parquet. Enterprise: all formats plus custom schema delivery. All orders include a methodology summary PDF.</div>
-        </details>
-        <details>
-          <summary>Can I get custom fields or condition distributions?</summary>
-          <div class="faq-body">Yes — on Professional and Enterprise orders, you can request specific condition prevalence rates, age distributions, field additions, and regional concentrations. Contact us before ordering to discuss your requirements. We typically respond within one business day.</div>
-        </details>
-        <details>
-          <summary>Do you offer a free sample?</summary>
-          <div class="faq-body">Yes. Request a free 1,000-record sample using the contact form. We'll deliver it within 24 hours at no cost and with no obligation. This lets you validate field structure, data realism, and format compatibility before purchasing.</div>
-        </details>
-        <details>
-          <summary>What's your refund policy?</summary>
-          <div class="faq-body">If your dataset doesn't match your agreed specifications, we'll regenerate it at no additional charge. If we're unable to meet your requirements, we offer a full refund. We recommend requesting the free sample first to verify fit before committing to a paid order.</div>
-        </details>
+        <div class="pricing-card featured fade-in">
+          <h3>Professional</h3>
+          <div class="price">$999<span>/month</span></div>
+          <p style="margin-bottom: 24px;">For mid-market healthcare companies</p>
+          <ul class="price-features">
+            <li>100,000 records/month</li>
+            <li>Priority API support</li>
+            <li>Custom conditions</li>
+            <li>Advanced SLA (99.5%)</li>
+            <li>5 API keys</li>
+            <li>Webhooks & integrations</li>
+          </ul>
+          <button class="btn btn-primary" style="width: 100%; justify-content: center;">Start Free Trial</button>
+        </div>
+
+        <div class="pricing-card fade-in">
+          <h3>Enterprise</h3>
+          <div class="price">Custom</div>
+          <p style="margin-bottom: 24px;">For enterprise healthcare organizations</p>
+          <ul class="price-features">
+            <li>Unlimited records</li>
+            <li>24/7 dedicated support</li>
+            <li>Custom data models</li>
+            <li>Premium SLA (99.99%)</li>
+            <li>Unlimited API keys</li>
+            <li>On-premise deployment</li>
+          </ul>
+          <button class="btn btn-secondary" style="width: 100%; justify-content: center;">Contact Sales</button>
+        </div>
       </div>
     </div>
   </section>
 
-  <hr class="divider">
-
-  <!-- CONTACT -->
-  <section id="contact">
+  <!-- ━━━ STATS ━━━ -->
+  <section class="section">
     <div class="container">
-      <div class="contact-layout">
-        <div class="contact-info">
-          <span class="section-label reveal">Get In Touch</span>
-          <h2 class="section-h2 reveal">Request your free<br>sample dataset</h2>
-          <p class="section-lead reveal">1,000 synthetic Canadian patient records — no cost, no commitment. We respond within 24 hours on business days.</p>
-          <div class="contact-detail reveal">
-            <div class="cd-icon">📧</div>
-            <div class="cd-text">
-              <strong>Email</strong>
-              <span>hello@synthmed.ca</span>
-            </div>
-          </div>
-          <div class="contact-detail reveal">
-            <div class="cd-icon">🇨🇦</div>
-            <div class="cd-text">
-              <strong>Location</strong>
-              <span>Canada — serving healthcare teams nationwide</span>
-            </div>
-          </div>
-          <div class="contact-detail reveal">
-            <div class="cd-icon">⏱</div>
-            <div class="cd-text">
-              <strong>Response Time</strong>
-              <span>Within 1 business day</span>
-            </div>
-          </div>
+      <div class="stats-grid">
+        <div class="stat-item fade-in">
+          <div class="stat-number">50K+</div>
+          <div class="stat-label">Records Generated</div>
         </div>
-        <div class="contact-form-card reveal">
-          <div class="form-success" id="form-success">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Thank you — we'll send your sample within 24 hours.</span>
-          </div>
-          <div class="form-error" id="form-error">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Something went wrong. Please email us directly at hello@synthmed.ca</span>
-          </div>
-          <form id="contact-form" novalidate>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-name">Full name *</label>
-                <input type="text" id="f-name" name="name" required autocomplete="name" placeholder="Dr. Jane Smith">
-              </div>
-              <div class="form-group">
-                <label for="f-email">Work email *</label>
-                <input type="email" id="f-email" name="email" required autocomplete="email" placeholder="jane@hospital.ca">
-              </div>
-            </div>
+        <div class="stat-item fade-in">
+          <div class="stat-number">99.9%</div>
+          <div class="stat-label">Uptime SLA</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-number">24/7</div>
+          <div class="stat-label">Enterprise Support</div>
+        </div>
+        <div class="stat-item fade-in">
+          <div class="stat-number">0ms</div>
+          <div class="stat-label">Setup Time</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━ CONTACT ━━━ -->
+  <section class="section alt" id="contact">
+    <div class="container">
+      <h2>Get Started Today</h2>
+
+      <div class="contact-wrapper" style="margin-top: 60px;">
+        <div class="contact-form">
+          <h3>Request a Demo</h3>
+          <form id="contact-form">
             <div class="form-group">
-              <label for="f-org">Organization *</label>
-              <input type="text" id="f-org" name="organization" required placeholder="Toronto General Hospital / Acme Health Tech">
+              <label>Full Name *</label>
+              <input type="text" id="f-name" placeholder="John Smith" required>
             </div>
+
             <div class="form-group">
-              <label for="f-role">Your role</label>
-              <select id="f-role" name="role">
-                <option value="">Select role (optional)</option>
-                <option>AI / ML Engineer</option>
-                <option>Data Scientist</option>
-                <option>Clinical Researcher</option>
-                <option>Product Manager</option>
-                <option>CTO / Technical Lead</option>
-                <option>Other</option>
-              </select>
+              <label>Work Email *</label>
+              <input type="email" id="f-email" placeholder="john@healthcare.com" required>
             </div>
+
             <div class="form-group">
-              <label for="f-msg">Project description</label>
-              <textarea id="f-msg" name="message" placeholder="What are you building? (optional)"></textarea>
+              <label>Organization *</label>
+              <input type="text" id="f-org" placeholder="Your Healthcare Company" required>
             </div>
-            <p class="form-disclaimer">By submitting, you agree to our <a href="#" onclick="showPage('privacy');return false;" style="color:var(--teal);">Privacy Policy</a>. We won't share your information with third parties.</p>
-            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:16px;" id="form-submit">
-              Request Free Sample Dataset →
-            </button>
+
+            <div class="form-group">
+              <label>Role</label>
+              <input type="text" id="f-role" placeholder="CTO, Data Lead, etc.">
+            </div>
+
+            <div class="form-group">
+              <label>Message</label>
+              <textarea id="f-msg" placeholder="Tell us about your use case..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">Send Request</button>
           </form>
         </div>
+
+        <div class="contact-info">
+          <h3>Why Teams Choose SynthMed</h3>
+
+          <div class="contact-info-item">
+            <h4>💼 Enterprise Grade</h4>
+            <p>Built for mission-critical healthcare systems. 99.99% uptime SLA. Dedicated support.</p>
+          </div>
+
+          <div class="contact-info-item">
+            <h4>🚀 Fast Deployment</h4>
+            <p>Get started in minutes. REST API. Instant integration with your existing systems.</p>
+          </div>
+
+          <div class="contact-info-item">
+            <h4>🔒 Fully Compliant</h4>
+            <p>HIPAA compliant. PIPEDA aligned. Zero privacy risk. Audit-ready architecture.</p>
+          </div>
+
+          <div class="contact-info-item">
+            <h4>📊 Smart Pricing</h4>
+            <p>Pay for what you use. No overages. Scale from startup to enterprise pricing.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-</main><!-- /page-home -->
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- ABOUT PAGE                                                  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<main id="page-about" class="page-section">
-  <div class="about-hero">
+  <!-- ━━━ FOOTER ━━━ -->
+  <footer>
     <div class="container">
-      <a href="#" onclick="showPage('home');return false;" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Back to home
-      </a>
-      <span class="section-label">About SynthMed</span>
-      <h1 class="section-h2" style="max-width:640px;">We started because Canadian healthcare AI teams had a data problem nobody was solving</h1>
-      <p class="section-lead" style="margin-top:16px;">Every team building health AI in Canada ran into the same wall: real patient data was locked behind ethics boards, consent processes, and data sharing agreements that took 12–18 months. SynthMed exists to remove that wall.</p>
-    </div>
-  </div>
-  <div class="about-mission">
-    <div class="container">
-      <div class="about-layout">
-        <div>
-          <span class="section-label">Our Approach</span>
-          <h2 class="section-h2">Honest about what synthetic data is — and isn't</h2>
-          <p style="font-size:15px;color:var(--ink-2);line-height:1.8;margin-bottom:20px;">Synthetic data is a powerful tool for development and testing. It is not a replacement for real clinical data in all contexts. We're transparent about that.</p>
-          <p style="font-size:15px;color:var(--ink-2);line-height:1.8;">What it excels at: letting your team build, test, and validate AI models before you have access to real data — so when you do get it, you're ready to move fast.</p>
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="/admin.html">Dashboard</a></li>
+            <li><a href="#">API Docs</a></li>
+          </ul>
         </div>
-        <div>
-          <ul class="value-list">
-            <li class="value-item">
-              <div class="value-icon">🎯</div>
-              <div>
-                <div class="value-title">Accuracy over claims</div>
-                <div class="value-desc">We describe our compliance posture carefully. "Designed with PIPEDA frameworks" is accurate. "PIPEDA certified" is not a real thing and we won't say it.</div>
-              </div>
-            </li>
-            <li class="value-item">
-              <div class="value-icon">🔬</div>
-              <div>
-                <div class="value-title">Clinical realism matters</div>
-                <div class="value-desc">Data that doesn't behave like real data won't produce useful models. We invest heavily in statistical co-variance to make sure our data trains well.</div>
-              </div>
-            </li>
-            <li class="value-item">
-              <div class="value-icon">🇨🇦</div>
-              <div>
-                <div class="value-title">Built for Canada specifically</div>
-                <div class="value-desc">ICD-10-CA codes, Canadian drug formulary references, provincial distributions, and PIPEDA-relevant design — not a US dataset with a maple leaf added.</div>
-              </div>
-            </li>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">HIPAA BAA</a></li>
+            <li><a href="#">Security</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">Status Page</a></li>
+            <li><a href="#">Community</a></li>
+            <li><a href="#">Support</a></li>
           </ul>
         </div>
       </div>
-    </div>
-  </div>
-  <div class="about-team">
-    <div class="container">
-      <span class="section-label">Contact</span>
-      <h2 class="section-h2">Get in touch</h2>
-      <p class="section-lead" style="margin-bottom:32px;">We're a small team building tools for a real problem in Canadian healthcare. Questions, feedback, or partnership inquiries are all welcome.</p>
-      <a href="#" class="btn btn-primary btn-lg" onclick="showPage('home');scrollToSection('contact');return false;">Contact Us →</a>
-    </div>
-  </div>
-</main>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- PRIVACY PAGE                                                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<main id="page-privacy" class="page-section">
-  <div class="legal-container">
-    <a href="#" onclick="showPage('home');return false;" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to home
-    </a>
-    <h1>Privacy Policy</h1>
-    <p class="legal-meta">Last updated: January 2026</p>
-    <p>This privacy policy describes how SynthMed collects, uses, and protects information submitted through our website and services.</p>
-    <h2>Information We Collect</h2>
-    <p>When you submit our contact form, we collect: your name, email address, organization name, and any project description you choose to provide. We use this information solely to respond to your inquiry and deliver requested sample datasets.</p>
-    <h2>How We Use Your Information</h2>
-    <ul>
-      <li>To respond to your inquiry within our stated response window</li>
-      <li>To deliver your requested sample dataset</li>
-      <li>To follow up on your project requirements if you've indicated interest in a paid order</li>
-    </ul>
-    <p>We do not sell, rent, or share your personal information with third parties for marketing purposes.</p>
-    <h2>Data We Do Not Collect</h2>
-    <p>SynthMed does not collect, store, or process any real patient health information. Our synthetic datasets contain no personally identifiable information and no data derived from real patients.</p>
-    <h2>Data Retention</h2>
-    <p>Contact inquiry information is retained for up to 24 months for the purpose of project follow-up and customer support. You may request deletion at any time by emailing hello@synthmed.ca.</p>
-    <h2>Cookies</h2>
-    <p>Our website uses no third-party analytics cookies. We use a single session cookie for form submission state only. No tracking, advertising, or behavioral profiling cookies are used.</p>
-    <h2>Your Rights (PIPEDA)</h2>
-    <p>Under PIPEDA, you have the right to access, correct, or request deletion of personal information we hold about you. To exercise these rights, contact us at hello@synthmed.ca.</p>
-    <h2>Contact</h2>
-    <p>Privacy questions: hello@synthmed.ca</p>
-  </div>
-</main>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TERMS PAGE                                                  -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<main id="page-terms" class="page-section">
-  <div class="legal-container">
-    <a href="#" onclick="showPage('home');return false;" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to home
-    </a>
-    <h1>Terms of Service</h1>
-    <p class="legal-meta">Last updated: January 2026</p>
-    <p>By accessing the SynthMed website or purchasing a dataset, you agree to these terms.</p>
-    <h2>Use of Synthetic Data</h2>
-    <p>SynthMed datasets are licensed for use in AI model development, testing, research, and demonstration purposes. You may not represent SynthMed synthetic data as real patient data in any context.</p>
-    <h2>Licence Grant</h2>
-    <p>Upon payment, SynthMed grants you a perpetual, non-exclusive licence to use the delivered dataset for internal purposes at your organization. You may not resell or redistribute the raw dataset to third parties.</p>
-    <h2>No Medical Advice</h2>
-    <p>SynthMed data is for AI development purposes only. It does not constitute medical advice, clinical guidance, or regulatory approval of any kind.</p>
-    <h2>Limitation of Liability</h2>
-    <p>SynthMed is not liable for decisions made using models trained on our data. The suitability of synthetic data for your specific regulatory or clinical context is your responsibility to assess.</p>
-    <h2>Refund Policy</h2>
-    <p>If your order does not meet the agreed specifications, we will regenerate the dataset or issue a full refund at our discretion. We do not provide refunds for change-of-mind after delivery.</p>
-    <h2>Contact</h2>
-    <p>Terms questions: hello@synthmed.ca</p>
-  </div>
-</main>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- DATA SECURITY PAGE                                          -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<main id="page-security" class="page-section">
-  <div class="legal-container">
-    <a href="#" onclick="showPage('home');return false;" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to home
-    </a>
-    <h1>Data Security & Compliance</h1>
-    <p class="legal-meta">Last updated: January 2026</p>
-    <h2>Our Core Position</h2>
-    <p>SynthMed's fundamental security advantage is architectural: we never collect, store, or process real patient data. There is no patient data to breach.</p>
-    <h2>Generation Security</h2>
-    <p>Synthetic datasets are generated using statistical models that run in isolated compute environments. No real patient records are used as inputs. Generation logs do not contain any personal health information.</p>
-    <h2>Delivery Security</h2>
-    <p>Completed datasets are delivered via time-limited, authenticated download links. Links expire after 72 hours. Files are delivered as compressed archives.</p>
-    <h2>Contact Information Handling</h2>
-    <p>Contact form submissions are transmitted over TLS and stored in access-controlled environments. Access is limited to SynthMed team members with a legitimate need. We do not use third-party CRM platforms for initial contact handling.</p>
-    <h2>Compliance Framework</h2>
-    <p>Because our data contains no personal information, it falls outside the scope of PIPEDA's personal information provisions. We design our processes to align with PIPEDA's fair information principles as a matter of best practice regardless.</p>
-    <h2>Reporting a Concern</h2>
-    <p>If you have a security concern or question, contact hello@synthmed.ca. We will respond within 2 business days.</p>
-  </div>
-</main>
-
-<!-- ─── FOOTER ────────────────────────────────────────────────── -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <span class="logo"><span>Synth</span>Med</span>
-        <p>Realistic synthetic Canadian patient data for healthcare AI development. No real patients. Designed with privacy frameworks in mind.</p>
-        <span class="tag tag-teal" style="width:fit-content;">🇨🇦 Built in Canada</span>
-      </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <a href="#" onclick="scrollToSection('how');return false;">How It Works</a>
-        <a href="#" onclick="scrollToSection('features');return false;">Dataset Contents</a>
-        <a href="#" onclick="scrollToSection('demo');return false;">Live Preview</a>
-        <a href="#" onclick="scrollToSection('pricing');return false;">Pricing</a>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <a href="#" onclick="showPage('about');return false;">About</a>
-        <a href="#" onclick="scrollToSection('usecases');return false;">Use Cases</a>
-        <a href="#" onclick="scrollToSection('faq');return false;">FAQ</a>
-        <a href="#" onclick="scrollToSection('contact');return false;">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h4>Legal</h4>
-        <a href="#" onclick="showPage('privacy');return false;">Privacy Policy</a>
-        <a href="#" onclick="showPage('terms');return false;">Terms of Service</a>
-        <a href="#" onclick="showPage('security');return false;">Data Security</a>
+      <div class="footer-bottom">
+        <div>&copy; 2026 SynthMed. All rights reserved.</div>
+        <div>Built for Healthcare. Powered by Innovation.</div>
       </div>
     </div>
-    <div class="footer-bottom">
-      <p>© 2026 SynthMed Data Inc. All rights reserved.</p>
-      <p>hello@synthmed.ca</p>
-      <p>No real patient data is used, collected, or stored.</p>
-    </div>
-  </div>
-</footer>
+  </footer>
 
-<script>
-/* ─── PAGE ROUTING ──────────────────────────────────────────── */
-const PAGES=['home','about','privacy','terms','security'];
-function showPage(id){
-  PAGES.forEach(p=>{
-    const el=document.getElementById('page-'+p);
-    if(el)el.classList.toggle('active',p===id);
-  });
-  document.querySelectorAll('[data-page]').forEach(a=>{
-    a.classList.toggle('active',a.dataset.page===id);
-  });
-  window.scrollTo({top:0,behavior:'instant'});
-  closeMobile();
-}
-function scrollToSection(id){
-  showPage('home');
-  setTimeout(()=>{
-    const el=document.getElementById(id);
-    if(el){const y=el.getBoundingClientRect().top+window.scrollY-72;window.scrollTo({top:y,behavior:'smooth'});}
-  },50);
-}
+  <!-- ━━━ SCRIPTS ━━━ -->
+  <script>
+    // Contact form submission
+    document.getElementById('contact-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
 
-/* ─── MOBILE NAV ────────────────────────────────────────────── */
-function toggleMobile(){
-  const m=document.getElementById('mobile-menu');
-  const h=document.getElementById('hamburger');
-  const open=!m.classList.contains('open');
-  m.classList.toggle('open',open);
-  h.classList.toggle('open',open);
-  h.setAttribute('aria-expanded',open);
-  document.body.style.overflow=open?'hidden':'';
-}
-function closeMobile(){
-  document.getElementById('mobile-menu').classList.remove('open');
-  document.getElementById('hamburger').classList.remove('open');
-  document.getElementById('hamburger').setAttribute('aria-expanded','false');
-  document.body.style.overflow='';
-}
+      const name = document.getElementById('f-name').value;
+      const email = document.getElementById('f-email').value;
+      const org = document.getElementById('f-org').value;
+      const role = document.getElementById('f-role').value;
+      const message = document.getElementById('f-msg').value;
 
-/* ─── NAV SCROLL ────────────────────────────────────────────── */
-window.addEventListener('scroll',()=>{
-  document.getElementById('nav').classList.toggle('scrolled',window.scrollY>10);
-  document.getElementById('scroll-top').classList.toggle('show',window.scrollY>400);
-},{ passive:true });
+      try {
+        const response = await fetch('http://localhost:3000/api/v1/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            organization: org,
+            role,
+            message,
+            source: 'website'
+          })
+        });
 
-/* ─── REVEAL ON SCROLL ──────────────────────────────────────── */
-const revealObs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
-},{threshold:0.1});
-document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
-
-/* ─── DEMO GENERATOR ────────────────────────────────────────── */
-let demoCount=0;
-const PROVINCES={
-  ON:'Ontario',BC:'British Columbia',AB:'Alberta',QC:'Quebec',NS:'Nova Scotia',MB:'Manitoba',
-  SK:'Saskatchewan',NB:'New Brunswick',NL:'Newfoundland',PE:'Prince Edward Island',
-  YT:'Yukon',NT:'Northwest Territories',NU:'Nunavut'
-};
-const CONDITIONS={
-  cardiovascular:[
-    {icd:'I10','icd_desc':'Essential Hypertension',med:'Lisinopril 10mg',bp:'148/92',glu:'5.2',hba1c:'5.4'},
-    {icd:'I25','icd_desc':'Chronic Ischaemic Heart Disease',med:'Metoprolol 50mg',bp:'136/84',glu:'5.8',hba1c:'5.6'},
-    {icd:'I48','icd_desc':'Atrial Fibrillation',med:'Apixaban 5mg',bp:'132/80',glu:'5.1',hba1c:'5.3'},
-  ],
-  diabetes:[
-    {icd:'E11','icd_desc':'Type 2 Diabetes Mellitus',med:'Metformin 500mg',bp:'138/86',glu:'9.4',hba1c:'8.1'},
-    {icd:'E11.6','icd_desc':'T2DM with Complications',med:'Empagliflozin 10mg',bp:'144/90',glu:'11.2',hba1c:'9.3'},
-  ],
-  respiratory:[
-    {icd:'J44','icd_desc':'COPD',med:'Tiotropium Inhaler',bp:'158/94',glu:'5.9',hba1c:'5.7'},
-    {icd:'J45','icd_desc':'Asthma',med:'Salbutamol Inhaler PRN',bp:'122/76',glu:'5.0',hba1c:'5.2'},
-  ],
-  'mental-health':[
-    {icd:'F32','icd_desc':'Depressive Episode',med:'Sertraline 50mg',bp:'118/74',glu:'4.8',hba1c:'5.1'},
-    {icd:'F41','icd_desc':'Anxiety Disorder',med:'Escitalopram 10mg',bp:'124/78',glu:'5.0',hba1c:'5.2'},
-  ]
-};
-const ALL_CONDITIONS=Object.values(CONDITIONS).flat();
-function randomFrom(arr){return arr[Math.floor(Math.random()*arr.length)];}
-function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function padId(n){return n.toString().padStart(4,'0');}
-function generateRecord(){
-  const pvSel=document.getElementById('demo-province').value;
-  const condSel=document.getElementById('demo-condition').value;
-  const pvKeys=Object.keys(PROVINCES);
-  const pvKey=pvSel==='random'?pvKeys[Math.floor(Math.random()*pvKeys.length)]:pvSel;
-  const province=PROVINCES[pvKey];
-  const condArr=condSel==='random'?ALL_CONDITIONS:CONDITIONS[condSel]||ALL_CONDITIONS;
-  const cond=randomFrom(condArr);
-  const age=randomInt(28,84);
-  const sex=Math.random()>.48?'Female':'Male';
-  const los=randomInt(2,12);
-  const readmit=Math.random()>.72?'Yes':'No';
-  const bmi=(18+Math.random()*18).toFixed(1);
-  const pid='SYN-CA-'+padId(randomInt(1000,9999));
-  demoCount++;
-  document.getElementById('demo-count').textContent=demoCount;
-  const fmt=document.getElementById('demo-format').value;
-  const body=document.getElementById('term-body');
-  if(fmt==='json'){
-    const obj={
-      patient_id:pid,age:age+' years',sex,province,
-      icd10_primary:cond.icd+' — '+cond.icd_desc,
-      medication:cond.med,bmi:parseFloat(bmi),
-      bp_mmhg:cond.bp,glucose_mmol:parseFloat(cond.glu),
-      hba1c_pct:parseFloat(cond.hba1c),los_days:los,
-      readmit_30d:readmit,synthetic:true
-    };
-    body.innerHTML='';
-    const comment=document.createElement('div');
-    comment.className='term-comment';comment.textContent='// Synthetically generated — no real patients';
-    body.appendChild(comment);
-    Object.entries(obj).forEach(([k,v],i)=>{
-      setTimeout(()=>{
-        const row=document.createElement('div');row.className='term-field fade-in';
-        const isStr=typeof v==='string';
-        const valClass=k==='patient_id'||k==='province'?'accent':k==='synthetic'||k==='readmit_30d'?'':'' ;
-        row.innerHTML='<span class="term-key">"'+k+'"</span><span class="term-val '+(k==='icd10_primary'?'accent':'')+'">'+
-          (isStr?'"'+v+'"':v)+'</span>';
-        body.appendChild(row);
-      },i*60);
+        if (response.ok) {
+          alert('✅ Demo request received! We\'ll be in touch shortly.');
+          this.reset();
+        } else {
+          alert('❌ Something went wrong. Please try again.');
+        }
+      } catch (error) {
+        alert('❌ Unable to connect. Please try again.');
+      }
     });
-    setTimeout(()=>{
-      const st=document.createElement('div');st.className='term-status ok fade-in';
-      st.innerHTML='✓ Record generated — statistically modelled, no source patient data';
-      body.appendChild(st);
-    },Object.keys(obj).length*60+100);
-  } else {
-    const fields='patient_id,age,sex,province,icd10_primary,medication,bmi,bp_mmhg,glucose_mmol,hba1c_pct,los_days,readmit_30d';
-    const vals=`${pid},${age} years,${sex},${province},${cond.icd} — ${cond.icd_desc},${cond.med},${bmi},${cond.bp},${cond.glu},${cond.hba1c},${los},${readmit}`;
-    body.innerHTML='<div class="term-comment">// CSV format — row 1 of 10000</div>';
-    setTimeout(()=>{
-      const h=document.createElement('div');h.className='term-field fade-in';h.style.flexDirection='column';h.style.gap='8px';
-      h.innerHTML='<span class="term-val" style="white-space:normal;word-break:break-all;font-size:11px;">'+fields+'</span>'+
-        '<span class="term-key" style="white-space:normal;word-break:break-all;font-size:11px;">'+vals+'</span>';
-      body.appendChild(h);
-      const st=document.createElement('div');st.className='term-status ok fade-in';st.style.marginTop='12px';
-      st.innerHTML='✓ Record generated';
-      body.appendChild(st);
-    },100);
-  }
-}
 
-/* ─── CONTACT FORM ──────────────────────────────────────────── */
-document.getElementById('contact-form').addEventListener('submit',async function(e){
-  e.preventDefault();
-  const btn=document.getElementById('form-submit');
-  const name=document.getElementById('f-name').value.trim();
-  const email=document.getElementById('f-email').value.trim();
-  const org=document.getElementById('f-org').value.trim();
-  if(!name||!email||!org){showToast('Please fill in all required fields.');return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast('Please enter a valid email address.');return;}
-  btn.disabled=true;btn.textContent='Sending…';
-  try{
-    const res=await fetch('http://localhost:3000/api/sample-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,organization:org,role:document.getElementById('f-role').value,message:document.getElementById('f-msg').value})});
-    const data=await res.json();
-    if(data.success==='true'||data.success===true){
-      document.getElementById('form-success').style.display='flex';
-      this.reset();
-    } else {
-      document.getElementById('form-error').style.display='flex';
-    }
-  }catch{
-    document.getElementById('form-error').style.display='flex';
-  }
-  btn.disabled=false;btn.textContent='Request Free Sample Dataset →';
-});
-
-/* ─── TOAST ─────────────────────────────────────────────────── */
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3500);
-}
-
-/* ─── KEYBOARD NAV ──────────────────────────────────────────── */
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeMobile();
-});
-</script>
+    // Smooth scroll links
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href !== '#') {
+          e.preventDefault();
+          const el = document.querySelector(href);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
