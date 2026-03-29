@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { getApiKeyByKey, getAccountById } from '../db.js';
+import crypto from 'crypto';
+import { getAccountById } from '../db.js';
+import { validateApiKey } from './api-key-service.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -73,7 +75,7 @@ export function requireApiKey(req, res, next) {
     });
   }
 
-  const keyRecord = getApiKeyByKey.get(apiKey);
+  const keyRecord = validateApiKey(apiKey);
 
   if (!keyRecord) {
     return res.status(401).json({
@@ -158,7 +160,7 @@ export function attachAccountId(req, res, next) {
       // Silent fail - authentication is optional
     }
   } else if (apiKey) {
-    const keyRecord = getApiKeyByKey.get(apiKey);
+    const keyRecord = validateApiKey(apiKey);
     if (keyRecord && new Date(keyRecord.expires_at) >= new Date()) {
       const account = getAccountById.get(keyRecord.account_id);
       if (account) {
@@ -191,9 +193,15 @@ export function requireAdmin(req, res, next) {
     });
   }
 
-  // Constant-time comparison to prevent timing attacks
-  const match = adminKey.length === expectedKey.length &&
-    Array.from(adminKey).every((c, i) => c === expectedKey[i]);
+  // Constant-time comparison using crypto.timingSafeEqual to prevent timing attacks
+  const a = Buffer.from(adminKey);
+  const b = Buffer.from(expectedKey);
+  const len = Math.max(a.length, b.length);
+  const aPadded = Buffer.alloc(len);
+  const bPadded = Buffer.alloc(len);
+  a.copy(aPadded);
+  b.copy(bPadded);
+  const match = a.length === b.length && crypto.timingSafeEqual(aPadded, bPadded);
 
   if (!match) {
     return res.status(403).json({

@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, 'synthmed.db'));
+const db = new Database(process.env.DB_PATH || path.join(__dirname, 'synthmed.db'));
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
@@ -18,6 +18,7 @@ db.exec(`
     organization TEXT NOT NULL,
     tier TEXT DEFAULT 'free' CHECK(tier IN ('free', 'starter', 'pro', 'enterprise')),
     status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'deleted')),
+    stripe_customer_id TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -84,11 +85,24 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email);
   CREATE INDEX IF NOT EXISTS idx_api_keys_account ON api_keys(account_id);
   CREATE INDEX IF NOT EXISTS idx_api_keys_key ON api_keys(key);
+  CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at ON api_keys(expires_at);
   CREATE INDEX IF NOT EXISTS idx_usage_events_account ON usage_events(account_id);
   CREATE INDEX IF NOT EXISTS idx_usage_events_timestamp ON usage_events(timestamp);
+  CREATE INDEX IF NOT EXISTS idx_usage_events_api_key_id ON usage_events(api_key_id);
   CREATE INDEX IF NOT EXISTS idx_audit_logs_account ON audit_logs(account_id);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
   CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
 `);
+
+// Migrate existing DB: add stripe_customer_id if missing
+try {
+  db.exec(`ALTER TABLE accounts ADD COLUMN stripe_customer_id TEXT`);
+} catch (e) {
+  // Column already exists — ignore
+}
+
+// Index depends on stripe_customer_id column existing — create after migration
+db.exec(`CREATE INDEX IF NOT EXISTS idx_accounts_stripe_customer ON accounts(stripe_customer_id)`);
 
 // Account operations
 export const createAccount = db.prepare(`
@@ -98,6 +112,8 @@ export const createAccount = db.prepare(`
 export const getAccountByEmail = db.prepare("SELECT * FROM accounts WHERE email = ? AND status != 'deleted'");
 export const getAccountById = db.prepare("SELECT * FROM accounts WHERE id = ? AND status != 'deleted'");
 export const updateAccountTier = db.prepare('UPDATE accounts SET tier = ?, updated_at = ? WHERE id = ?');
+export const updateStripeCustomerId = db.prepare('UPDATE accounts SET stripe_customer_id = ?, updated_at = ? WHERE id = ?');
+export const getAccountByStripeCustomerId = db.prepare("SELECT * FROM accounts WHERE stripe_customer_id = ? AND status != 'deleted'");
 export const deleteAccount = db.prepare("UPDATE accounts SET status = 'deleted', updated_at = ? WHERE id = ?");
 
 // API Key operations

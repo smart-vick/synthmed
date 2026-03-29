@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { updateAccountTier } from '../db.js';
+import { updateAccountTier, updateStripeCustomerId, getAccountByStripeCustomerId } from '../db.js';
 
 // Initialize Stripe (requires STRIPE_SECRET_KEY env var)
 const stripeKey = process.env.STRIPE_SECRET_KEY;
@@ -10,37 +10,40 @@ if (!stripeKey && process.env.NODE_ENV === 'production') {
 }
 
 /**
- * Stripe product IDs and prices (should be created in Stripe dashboard)
- * Format: stripe_prod_{tier}_{interval}
+ * Stripe product IDs and prices (must be created in Stripe dashboard as one-time prices)
+ * Pricing matches the public landing page:
+ *   Starter      — $500   one-time — 10,000 records
+ *   Professional — $2,000 one-time — 100,000 records
+ *   Enterprise   — custom pricing
  */
 const PRODUCTS = {
   starter: {
     productId: process.env.STRIPE_PRODUCT_STARTER || 'prod_starter',
-    priceId: process.env.STRIPE_PRICE_STARTER || 'price_starter_monthly',
+    priceId: process.env.STRIPE_PRICE_STARTER || 'price_starter_onetime',
     tier: 'starter',
-    amount: 2500, // $25.00 in cents
-    records: 50000,
-    interval: 'month',
+    amount: 50000,   // $500.00 in cents
+    records: 10000,
+    interval: 'one_time',
   },
   pro: {
     productId: process.env.STRIPE_PRODUCT_PRO || 'prod_pro',
-    priceId: process.env.STRIPE_PRICE_PRO || 'price_pro_monthly',
+    priceId: process.env.STRIPE_PRICE_PRO || 'price_pro_onetime',
     tier: 'pro',
-    amount: 12500, // $125.00 in cents
-    records: 500000,
-    interval: 'month',
+    amount: 200000,  // $2,000.00 in cents
+    records: 100000,
+    interval: 'one_time',
   },
   enterprise: {
     productId: process.env.STRIPE_PRODUCT_ENTERPRISE || 'prod_enterprise',
     tier: 'enterprise',
-    amount: null, // Custom pricing
+    amount: null,    // Custom pricing — handled offline
     records: 'unlimited',
     interval: 'custom',
   },
 };
 
 /**
- * Create a checkout session for subscription
+ * Create a one-time payment checkout session
  * @param {number} accountId - Account ID
  * @param {string} email - Customer email
  * @param {string} tier - 'starter' or 'pro'
@@ -57,17 +60,18 @@ export async function createCheckoutSession(accountId, email, tier, successUrl, 
   }
 
   const product = PRODUCTS[tier];
-  if (!product) {
-    const error = new Error('Invalid tier');
-    error.code = 'INVALID_TIER';
+  if (!product || !product.priceId) {
+    const error = new Error(product ? 'Enterprise pricing requires a custom quote — contact us' : 'Invalid tier');
+    error.code = product ? 'ENTERPRISE_CUSTOM' : 'INVALID_TIER';
     error.status = 400;
     throw error;
   }
 
   try {
+    const idempotencyKey = `checkout_${accountId}_${tier}_${Math.floor(Date.now() / 3600000)}`; // unique per account+tier per hour
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      mode: 'subscription',
+      mode: 'payment',        // one-time payment, not subscription
       customer_email: email,
       line_items: [
         {
@@ -81,7 +85,7 @@ export async function createCheckoutSession(accountId, email, tier, successUrl, 
         accountId: accountId.toString(),
         tier,
       },
-    });
+    }, { idempotencyKey });
 
     return {
       sessionId: session.id,
@@ -111,7 +115,7 @@ export async function getCheckoutSession(sessionId) {
 
   try {
     return await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['line_items', 'subscription'],
+      expand: ['line_items'],
     });
   } catch (err) {
     console.error('[stripe] Session retrieval failed:', err.message);
@@ -123,7 +127,7 @@ export async function getCheckoutSession(sessionId) {
 }
 
 /**
- * Create customer portal session for subscription management
+ * Create customer portal session for order history
  * @param {string} stripeCustomerId - Stripe customer ID
  * @param {string} returnUrl - URL to return to after portal
  * @returns {Object} Portal session with URL
@@ -142,9 +146,7 @@ export async function createPortalSession(stripeCustomerId, returnUrl) {
       return_url: returnUrl,
     });
 
-    return {
-      url: session.url,
-    };
+    return { url: session.url };
   } catch (err) {
     console.error('[stripe] Portal session creation failed:', err.message);
     const error = new Error('Failed to create portal session');
@@ -169,43 +171,33 @@ export async function handleWebhookEvent(event, accountId) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const tier = session.metadata?.tier;
-      if (accountId && tier) {
-        updateAccountTier.run(tier, new Date().toISOString(), accountId);
+      const now = new Date().toISOString();
+      if (accountId && tier && session.payment_status === 'paid') {
+        updateAccountTier.run(tier, now, accountId);
+        // Store Stripe customer ID so billing portal works
+        if (session.customer) {
+          updateStripeCustomerId.run(session.customer, now, accountId);
+        }
         console.log(`[stripe] Account ${accountId} upgraded to ${tier} tier`);
       }
       break;
     }
 
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object;
-      const accountIdFromMetadata = subscription.metadata?.accountId;
-      // Handle subscription updates (e.g., tier changes)
-      console.log(`[stripe] Subscription updated for account ${accountIdFromMetadata}`);
+    case 'payment_intent.payment_failed': {
+      const intent = event.data.object;
+      console.warn(`[stripe] Payment failed for intent ${intent.id}`);
       break;
     }
 
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object;
-      const accountIdFromMetadata = subscription.metadata?.accountId;
-      // Handle subscription cancellation - downgrade to free
-      if (accountIdFromMetadata) {
-        updateAccountTier.run('free', new Date().toISOString(), accountIdFromMetadata);
-        console.log(`[stripe] Account ${accountIdFromMetadata} downgraded to free tier`);
+    case 'charge.refunded': {
+      const charge = event.data.object;
+      // Only downgrade if fully refunded (not a partial refund)
+      if (charge.refunded !== true) break;
+      const refundedAccountId = charge.metadata?.accountId;
+      if (refundedAccountId) {
+        updateAccountTier.run('free', new Date().toISOString(), parseInt(refundedAccountId, 10));
+        console.log(`[stripe] Account ${refundedAccountId} downgraded after full refund`);
       }
-      break;
-    }
-
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object;
-      console.warn(`[stripe] Payment failed for invoice ${invoice.id}`);
-      // Send notification email to customer
-      break;
-    }
-
-    case 'invoice.paid': {
-      const invoice = event.data.object;
-      console.log(`[stripe] Payment successful for invoice ${invoice.id}`);
-      // Send receipt email
       break;
     }
 
@@ -248,55 +240,65 @@ export function verifyWebhookSignature(body, signature) {
 }
 
 /**
- * Get pricing information
+ * Get pricing information (matches landing page)
  */
 export function getPricingInfo() {
   return {
     free: {
       tier: 'free',
-      price: '$0/month',
-      records: '1,000/month',
+      price: '$0',
+      billing: 'free sample',
+      records: '1,000 records',
       features: [
-        'Public data generation',
-        'Preview API access',
-        'Basic rate limiting',
-        'Community support',
+        'Free sample dataset',
+        '1,000 synthetic patient records',
+        'CSV and JSON formats',
+        'All 13 Canadian provinces',
+        'Methodology summary',
       ],
     },
     starter: {
       tier: 'starter',
-      price: '$25/month',
-      records: '50,000/month',
+      price: '$500',
+      billing: 'one-time',
+      records: '10,000 records',
       features: [
-        'Everything in Free',
-        'API key access',
-        'Standard rate limits',
+        '10,000 synthetic patient records',
+        '21 clinical fields per record',
+        'All 13 Canadian provinces',
+        'CSV and JSON formats',
+        'Methodology summary document',
         'Email support',
-        'Monthly invoice',
       ],
     },
     pro: {
       tier: 'pro',
-      price: '$125/month',
-      records: '500,000/month',
+      display_name: 'Professional',
+      price: '$2,000',
+      billing: 'one-time',
+      records: '100,000 records',
       features: [
-        'Everything in Starter',
-        'Higher rate limits',
-        'Priority support',
-        'Custom integrations',
-        'Usage analytics',
+        '100,000 synthetic patient records',
+        '21 clinical fields per record',
+        'All 13 Canadian provinces',
+        'CSV, JSON, and Parquet formats',
+        'Quality validation report',
+        'Priority email support',
+        'Methodology documentation',
       ],
     },
     enterprise: {
       tier: 'enterprise',
       price: 'Custom',
-      records: 'Unlimited',
+      billing: 'custom',
+      records: '1M+ records',
       features: [
-        'Everything in Pro',
-        'Dedicated support',
-        'SLA guarantee',
-        'Custom features',
-        'Volume discounts',
+        '1M+ patient records',
+        'Custom field configuration',
+        'Custom condition distributions',
+        'All formats including custom schema',
+        'Dedicated account support',
+        'White-label available',
       ],
     },
   };

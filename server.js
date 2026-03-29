@@ -93,8 +93,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       imgSrc: ["'self'", 'data:'],
     },
   },
@@ -103,7 +105,7 @@ app.use(helmet({
 // CORS with validation
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:3000', 'http://localhost'];
+  : ['http://localhost:3000'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -116,6 +118,28 @@ app.use(cors({
   credentials: true,
   optionsSuccessStatus: 200,
 }));
+
+// Stripe webhook must receive raw body — register BEFORE express.json()
+app.post('/api/v1/webhooks/stripe', express.raw({type: 'application/json'}), async (req, res) => {
+  const signature = req.headers['stripe-signature'];
+  if (!signature) {
+    return res.status(400).json({ ok: false, error: 'Missing Stripe signature', code: 'MISSING_SIGNATURE' });
+  }
+  try {
+    const { verifyWebhookSignature, handleWebhookEvent } = await import('./src/payment-service.js');
+    const event = verifyWebhookSignature(req.body, signature);
+    const accountId = event.data?.object?.metadata?.accountId ||
+      event.data?.object?.subscription?.metadata?.accountId;
+    await handleWebhookEvent(event, parseInt(accountId, 10) || null);
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('[webhook] Error:', err.message);
+    if (err.code === 'INVALID_SIGNATURE') {
+      return res.status(403).json({ ok: false, error: 'Invalid signature', code: 'INVALID_SIGNATURE' });
+    }
+    res.status(500).json({ ok: false, error: 'Webhook processing failed', code: 'WEBHOOK_ERROR' });
+  }
+});
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -210,14 +234,20 @@ function generateRecord({ province, conditionCategory }) {
 // ─────────────────────────────────────────────────────────────
 
 app.get('/api/health', (req, res) => {
-  const count = getPreviewCount().count;
-  res.json({
-    ok: true,
+  let dbStatus = 'healthy';
+  let previewCount = 0;
+  try {
+    previewCount = getPreviewCount().count;
+  } catch {
+    dbStatus = 'unhealthy';
+  }
+  res.status(dbStatus === 'healthy' ? 200 : 503).json({
+    ok: dbStatus === 'healthy',
     service: 'synthmed-api',
     version: 'v1',
     uptime_seconds: Math.floor(process.uptime()),
-    previews_generated: count,
-    database: 'healthy',
+    previews_generated: previewCount,
+    database: dbStatus,
     timestamp: new Date().toISOString(),
   });
 });
@@ -379,6 +409,38 @@ app.get('/api/v1/account', requireAuth, (req, res) => {
       created_at: account.created_at,
     },
   });
+});
+
+// Download full dataset — tier determines record count
+app.get('/api/v1/generate/download', requireAuth, (req, res) => {
+  const account = getAccountById.get(req.auth.accountId);
+  if (!account) {
+    return res.status(404).json({ ok: false, error: 'Account not found', code: 'NOT_FOUND' });
+  }
+
+  const TIER_LIMITS = { free: 1000, starter: 10000, pro: 100000, enterprise: 100000 };
+  const count = TIER_LIMITS[account.tier] || 1000;
+  const format = req.query.format === 'json' ? 'json' : 'csv';
+
+  const records = [];
+  for (let i = 0; i < count; i++) {
+    records.push(generateRecord({ province: 'random', conditionCategory: 'random' }));
+  }
+
+  db.prepare(`INSERT INTO usage_events (account_id, api_key_id, endpoint, records_generated, timestamp) VALUES (?, ?, ?, ?, ?)`)
+    .run(req.auth.accountId, null, '/api/v1/generate/download', count, new Date().toISOString());
+
+  if (format === 'csv') {
+    const headers = Object.keys(records[0]);
+    const lines = [headers.join(',')];
+    for (const r of records) lines.push(headers.map(h => escapeCSVValue(String(r[h]))).join(','));
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="synthmed-${account.tier}-${Date.now()}.csv"`);
+    return res.status(200).send(lines.join('\n'));
+  } else {
+    res.setHeader('Content-Disposition', `attachment; filename="synthmed-${account.tier}-${Date.now()}.json"`);
+    return res.status(200).json({ ok: true, records, count, tier: account.tier, generated_at: new Date().toISOString() });
+  }
 });
 
 // Delete account
@@ -705,19 +767,7 @@ app.get('/api/v1/usage', requireAuth, (req, res) => {
       WHERE account_id = ? AND timestamp >= ?
     `).get(req.auth.accountId, thirtyDaysAgo.toISOString());
 
-    // Get account tier for pricing
     const account = getAccountById.get(req.auth.accountId);
-
-    // Calculate estimated cost based on tier
-    const costPerRecord = {
-      free: 0,
-      starter: 0.0005, // $0.50 per 1000
-      pro: 0.00025,    // $0.25 per 1000
-      enterprise: 0,   // Custom pricing
-    };
-
-    const costMultiplier = costPerRecord[account.tier] || 0;
-    const estimatedCostCents = Math.ceil((totalStats.total_records || 0) * costMultiplier * 100);
 
     res.status(200).json({
       ok: true,
@@ -725,16 +775,14 @@ app.get('/api/v1/usage', requireAuth, (req, res) => {
         last_30_days: {
           total_requests: totalStats.total_requests || 0,
           total_records: totalStats.total_records || 0,
-          estimated_cost_cents: estimatedCostCents,
-          estimated_cost_dollars: (estimatedCostCents / 100).toFixed(2),
           by_endpoint: usage || [],
         },
         current_tier: account.tier,
         tier_limits: {
-          free: '1,000 records/month',
-          starter: '50,000 records/month ($25/mo)',
-          pro: '500,000 records/month ($125/mo)',
-          enterprise: 'Custom',
+          free: '1,000 records (free sample)',
+          starter: '10,000 records ($500 one-time)',
+          pro: '100,000 records ($2,000 one-time)',
+          enterprise: 'Custom (1M+ records)',
         },
       },
     });
@@ -864,11 +912,16 @@ app.post('/api/v1/billing/portal', requireAuth, async (req, res) => {
   }
 
   try {
-    // In production, you'd store the Stripe customer ID in the accounts table
-    // For now, we generate a placeholder
-    const stripeCustomerId = `cus_${req.auth.accountId}_${Date.now()}`;
+    const account = getAccountById.get(req.auth.accountId);
+    if (!account?.stripe_customer_id) {
+      return res.status(400).json({
+        ok: false,
+        error: 'No billing account found. Please complete a purchase first.',
+        code: 'NO_STRIPE_CUSTOMER',
+      });
+    }
 
-    const portal = await createPortalSession(stripeCustomerId, returnUrl);
+    const portal = await createPortalSession(account.stripe_customer_id, returnUrl);
 
     res.status(200).json({
       ok: true,
@@ -890,54 +943,6 @@ app.post('/api/v1/billing/portal', requireAuth, async (req, res) => {
   }
 });
 
-// Stripe webhook handler (raw body required for signature verification)
-app.post('/webhooks/stripe', express.raw({type: 'application/json'}), async (req, res) => {
-  const signature = req.headers['stripe-signature'];
-
-  if (!signature) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Missing Stripe signature',
-      code: 'MISSING_SIGNATURE',
-    });
-  }
-
-  try {
-    const event = verifyWebhookSignature(req.body, signature);
-
-    // Extract account ID from event metadata
-    const accountId = event.data?.object?.metadata?.accountId ||
-      event.data?.object?.subscription?.metadata?.accountId;
-
-    await handleWebhookEvent(event, parseInt(accountId, 10) || null);
-
-    res.status(200).json({ received: true });
-  } catch (err) {
-    console.error('[webhook] Error:', err.message);
-
-    if (err.code === 'INVALID_SIGNATURE') {
-      return res.status(403).json({
-        ok: false,
-        error: 'Invalid signature',
-        code: 'INVALID_SIGNATURE',
-      });
-    }
-
-    if (err.code === 'STRIPE_NOT_CONFIGURED') {
-      return res.status(503).json({
-        ok: false,
-        error: 'Stripe not configured',
-        code: 'SERVICE_UNAVAILABLE',
-      });
-    }
-
-    res.status(500).json({
-      ok: false,
-      error: 'Webhook processing failed',
-      code: 'WEBHOOK_ERROR',
-    });
-  }
-});
 
 // ─────────────────────────────────────────────────────────────
 // ADMIN ENDPOINTS
@@ -1063,6 +1068,22 @@ app.use((req, res) => {
 // ─────────────────────────────────────────────────────────────
 // SERVER STARTUP
 // ─────────────────────────────────────────────────────────────
+
+// Validate critical env vars before accepting traffic
+const REQUIRED_ENV = ['JWT_SECRET', 'ADMIN_KEY'];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`[startup] Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
+if (process.env.NODE_ENV === 'production') {
+  const requiredProd = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+  const missingProd = requiredProd.filter(k => !process.env[k]);
+  if (missingProd.length > 0) {
+    console.error(`[startup] Missing required production env vars: ${missingProd.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 const server = app.listen(PORT, () => {
   console.log(`\n  SynthMed API  →  http://localhost:${PORT}`);

@@ -400,6 +400,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
       <a href="#" onclick="scrollToSection('contact');return false;">Contact</a>
     </div>
     <div class="nav-actions">
+      <a id="nav-dashboard-btn" href="#" class="btn btn-outline" onclick="showPage('dashboard');loadDashboard();return false;" style="display:none;">My Account</a>
       <a href="#" class="btn btn-outline" onclick="scrollToSection('contact');return false;">Get Access</a>
       <a href="#" class="btn btn-primary" onclick="scrollToSection('demo');return false;">Request Sample</a>
     </div>
@@ -807,7 +808,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology summary document</li>
             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Email support</li>
           </ul>
-          <a href="#" class="plan-cta" onclick="scrollToSection('contact');return false;">Get Started</a>
+          <a href="#" class="plan-cta" onclick="initiateCheckout('starter');return false;">Get Started</a>
         </div>
         <div class="plan featured reveal reveal-delay-2">
           <div class="plan-badge">Most Popular</div>
@@ -823,7 +824,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority email support</li>
             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology documentation</li>
           </ul>
-          <a href="#" class="plan-cta primary" onclick="scrollToSection('contact');return false;">Get Started</a>
+          <a href="#" class="plan-cta primary" onclick="initiateCheckout('pro');return false;">Get Started</a>
         </div>
         <div class="plan reveal reveal-delay-3">
           <div class="plan-tier">Enterprise</div>
@@ -893,7 +894,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
             <div class="cd-icon">📧</div>
             <div class="cd-text">
               <strong>Email</strong>
-              <span>hello@synthmed.ca</span>
+              <span>vk800772@gmail.com</span>
             </div>
           </div>
           <div class="contact-detail reveal">
@@ -918,7 +919,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
           </div>
           <div class="form-error" id="form-error">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Something went wrong. Please email us directly at hello@synthmed.ca</span>
+            <span>Something went wrong. Please email us directly at vk800772@gmail.com</span>
           </div>
           <form id="contact-form" novalidate>
             <div class="form-row">
@@ -1049,13 +1050,13 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
     <h2>Data We Do Not Collect</h2>
     <p>SynthMed does not collect, store, or process any real patient health information. Our synthetic datasets contain no personally identifiable information and no data derived from real patients.</p>
     <h2>Data Retention</h2>
-    <p>Contact inquiry information is retained for up to 24 months for the purpose of project follow-up and customer support. You may request deletion at any time by emailing hello@synthmed.ca.</p>
+    <p>Contact inquiry information is retained for up to 24 months for the purpose of project follow-up and customer support. You may request deletion at any time by emailing vk800772@gmail.com.</p>
     <h2>Cookies</h2>
     <p>Our website uses no third-party analytics cookies. We use a single session cookie for form submission state only. No tracking, advertising, or behavioral profiling cookies are used.</p>
     <h2>Your Rights (PIPEDA)</h2>
-    <p>Under PIPEDA, you have the right to access, correct, or request deletion of personal information we hold about you. To exercise these rights, contact us at hello@synthmed.ca.</p>
+    <p>Under PIPEDA, you have the right to access, correct, or request deletion of personal information we hold about you. To exercise these rights, contact us at vk800772@gmail.com.</p>
     <h2>Contact</h2>
-    <p>Privacy questions: hello@synthmed.ca</p>
+    <p>Privacy questions: vk800772@gmail.com</p>
   </div>
 </main>
 
@@ -1082,7 +1083,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
     <h2>Refund Policy</h2>
     <p>If your order does not meet the agreed specifications, we will regenerate the dataset or issue a full refund at our discretion. We do not provide refunds for change-of-mind after delivery.</p>
     <h2>Contact</h2>
-    <p>Terms questions: hello@synthmed.ca</p>
+    <p>Terms questions: vk800772@gmail.com</p>
   </div>
 </main>
 
@@ -1108,7 +1109,66 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
     <h2>Compliance Framework</h2>
     <p>Because our data contains no personal information, it falls outside the scope of PIPEDA's personal information provisions. We design our processes to align with PIPEDA's fair information principles as a matter of best practice regardless.</p>
     <h2>Reporting a Concern</h2>
-    <p>If you have a security concern or question, contact hello@synthmed.ca. We will respond within 2 business days.</p>
+    <p>If you have a security concern or question, contact vk800772@gmail.com. We will respond within 2 business days.</p>
+  </div>
+</main>
+
+<!-- ─── DASHBOARD PAGE ───────────────────────────────────────── -->
+<main id="page-dashboard" class="page-section">
+  <div style="max-width:680px;margin:0 auto;padding:0 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:28px;font-weight:700;margin:0 0 4px;">My Dashboard</h1>
+        <p id="dash-greeting" style="color:#6b7f8e;font-size:15px;margin:0;"></p>
+      </div>
+      <button onclick="dashLogout()" style="padding:8px 18px;background:#f1f5f8;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;color:#374151;">Sign out</button>
+    </div>
+
+    <!-- Account card -->
+    <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <p style="font-size:13px;color:#6b7f8e;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Current Plan</p>
+          <p id="dash-tier" style="font-size:22px;font-weight:700;margin:0;color:#0a7ea4;"></p>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-size:13px;color:#6b7f8e;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Records Included</p>
+          <p id="dash-records" style="font-size:22px;font-weight:700;margin:0;"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download card -->
+    <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:28px;margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin:0 0 8px;">Download Your Dataset</h2>
+      <p style="color:#6b7f8e;font-size:14px;margin:0 0 20px;">Your synthetic Canadian patient records are ready. Choose your format and download instantly.</p>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;">
+          <input type="radio" name="dash-format" value="csv" checked style="accent-color:#0a7ea4;"> CSV
+          <span style="color:#9badb9;font-size:12px;">Excel-compatible</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 16px;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;">
+          <input type="radio" name="dash-format" value="json" style="accent-color:#0a7ea4;"> JSON
+          <span style="color:#9badb9;font-size:12px;">API-ready</span>
+        </label>
+      </div>
+
+      <button id="dash-download-btn" onclick="dashDownload()" style="width:100%;padding:14px;background:#0a7ea4;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.01em;">
+        Download Dataset
+      </button>
+      <p id="dash-download-note" style="font-size:12px;color:#9badb9;margin:10px 0 0;text-align:center;"></p>
+    </div>
+
+    <!-- Upgrade card (shown only for free tier) -->
+    <div id="dash-upgrade-card" style="display:none;background:linear-gradient(135deg,#0a7ea4 0%,#0e9ec9 100%);border-radius:16px;padding:28px;color:#fff;margin-bottom:24px;">
+      <h2 style="font-size:18px;font-weight:700;margin:0 0 8px;">Need more records?</h2>
+      <p style="font-size:14px;opacity:.9;margin:0 0 20px;">Upgrade to Starter (10,000 records) or Professional (100,000 records) for your full dataset.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button onclick="initiateCheckout('starter')" style="padding:10px 20px;background:#fff;color:#0a7ea4;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Starter — $500</button>
+        <button onclick="initiateCheckout('pro')" style="padding:10px 20px;background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Professional — $2,000</button>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -1144,7 +1204,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
     </div>
     <div class="footer-bottom">
       <p>© 2026 SynthMed Data Inc. All rights reserved.</p>
-      <p>hello@synthmed.ca</p>
+      <p>vk800772@gmail.com</p>
       <p>No real patient data is used, collected, or stored.</p>
     </div>
   </div>
@@ -1152,7 +1212,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
 
 <script>
 /* ─── PAGE ROUTING ──────────────────────────────────────────── */
-const PAGES=['home','about','privacy','terms','security'];
+const PAGES=['home','about','privacy','terms','security','dashboard'];
 function showPage(id){
   PAGES.forEach(p=>{
     const el=document.getElementById('page-'+p);
@@ -1304,7 +1364,7 @@ document.getElementById('contact-form').addEventListener('submit',async function
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast('Please enter a valid email address.');return;}
   btn.disabled=true;btn.textContent='Sending…';
   try{
-    const res=await fetch('http://localhost:3000/api/sample-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,organization:org,role:document.getElementById('f-role').value,message:document.getElementById('f-msg').value})});
+    const res=await fetch('/api/v1/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,organization:org,role:document.getElementById('f-role').value,message:document.getElementById('f-msg').value})});
     const data=await res.json();
     if(data.success==='true'||data.success===true){
       document.getElementById('form-success').style.display='flex';
@@ -1327,8 +1387,194 @@ function showToast(msg){
 
 /* ─── KEYBOARD NAV ──────────────────────────────────────────── */
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeMobile();
+  if(e.key==='Escape'){closeMobile();closeCheckoutModal();}
 });
+
+/* ─── CHECKOUT FLOW ─────────────────────────────────────────── */
+let _checkoutTier = null;
+
+function initiateCheckout(tier) {
+  const token = localStorage.getItem('sm_access_token');
+  if (token) {
+    startStripeCheckout(tier, token);
+  } else {
+    _checkoutTier = tier;
+    document.getElementById('checkout-modal').style.display = 'flex';
+    document.getElementById('cm-tab-register').click();
+  }
+}
+
+function closeCheckoutModal() {
+  document.getElementById('checkout-modal').style.display = 'none';
+  document.getElementById('cm-error').textContent = '';
+}
+
+function switchTab(tab) {
+  document.getElementById('cm-register-form').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('cm-login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('cm-tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('cm-tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('cm-error').textContent = '';
+}
+
+async function cmRegister() {
+  const email = document.getElementById('cm-reg-email').value.trim();
+  const org   = document.getElementById('cm-reg-org').value.trim();
+  const pass  = document.getElementById('cm-reg-pass').value;
+  const err   = document.getElementById('cm-error');
+  if (!email || !org || !pass) { err.textContent = 'All fields required.'; return; }
+  const btn = document.getElementById('cm-reg-btn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res  = await fetch('/api/v1/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, organization:org, password:pass, confirmPassword:pass}) });
+    const data = await res.json();
+    if (!data.ok) { err.textContent = data.error || 'Registration failed.'; return; }
+    // Auto-login after register
+    const loginRes  = await fetch('/api/v1/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password:pass}) });
+    const loginData = await loginRes.json();
+    if (!loginData.ok) { err.textContent = 'Registered but login failed. Try logging in.'; return; }
+    localStorage.setItem('sm_access_token', loginData.accessToken);
+    closeCheckoutModal();
+    startStripeCheckout(_checkoutTier, loginData.accessToken);
+  } catch { err.textContent = 'Network error. Please try again.'; }
+  finally { btn.disabled = false; btn.textContent = 'Create Account & Pay'; }
+}
+
+async function cmLogin() {
+  const email = document.getElementById('cm-login-email').value.trim();
+  const pass  = document.getElementById('cm-login-pass').value;
+  const err   = document.getElementById('cm-error');
+  if (!email || !pass) { err.textContent = 'Email and password required.'; return; }
+  const btn = document.getElementById('cm-login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res  = await fetch('/api/v1/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password:pass}) });
+    const data = await res.json();
+    if (!data.ok) { err.textContent = data.error || 'Login failed.'; return; }
+    localStorage.setItem('sm_access_token', data.accessToken);
+    closeCheckoutModal();
+    startStripeCheckout(_checkoutTier, data.accessToken);
+  } catch { err.textContent = 'Network error. Please try again.'; }
+  finally { btn.disabled = false; btn.textContent = 'Sign In & Pay'; }
+}
+
+async function startStripeCheckout(tier, token) {
+  showToast('Redirecting to secure checkout…');
+  try {
+    const res  = await fetch('/api/v1/billing/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: JSON.stringify({ tier, successUrl: window.location.origin+'?payment=success', cancelUrl: window.location.origin+'?payment=cancelled' })
+    });
+    const data = await res.json();
+    if (data.ok && data.checkout?.url) {
+      window.location.href = data.checkout.url;
+    } else {
+      showToast(data.error || 'Checkout failed. Please try again.');
+      localStorage.removeItem('sm_access_token');
+    }
+  } catch { showToast('Network error. Please try again.'); }
+}
+
+// Show success/cancelled message on return from Stripe
+(function(){
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('payment') === 'success') {
+    loadDashboard();
+    showPage('dashboard');
+    showToast('Payment successful! Your dataset is ready to download.');
+  }
+  if (p.get('payment') === 'cancelled') showToast('Checkout cancelled. No charge was made.');
+  // Auto-load dashboard if already logged in
+  if (localStorage.getItem('sm_access_token')) loadDashboard();
+})();
+
+const TIER_LABELS = { free:'Free Sample', starter:'Starter', pro:'Professional', enterprise:'Enterprise' };
+const TIER_RECORDS = { free:'1,000 records', starter:'10,000 records', pro:'100,000 records', enterprise:'Custom' };
+
+async function loadDashboard() {
+  const token = localStorage.getItem('sm_access_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/v1/account', { headers:{ Authorization:'Bearer '+token } });
+    if (!res.ok) { localStorage.removeItem('sm_access_token'); return; }
+    const { account } = await res.json();
+    document.getElementById('dash-greeting').textContent = account.organization + ' · ' + account.email;
+    document.getElementById('dash-tier').textContent = TIER_LABELS[account.tier] || account.tier;
+    document.getElementById('dash-records').textContent = TIER_RECORDS[account.tier] || '—';
+    document.getElementById('dash-download-note').textContent =
+      'Generating ' + (TIER_RECORDS[account.tier] || '') + ' — may take a few seconds for large datasets.';
+    if (account.tier === 'free') document.getElementById('dash-upgrade-card').style.display = 'block';
+    // Show My Account button in nav
+    const navBtn = document.getElementById('nav-dashboard-btn');
+    if (navBtn) navBtn.style.display = 'inline-flex';
+  } catch {}
+}
+
+async function dashDownload() {
+  const token = localStorage.getItem('sm_access_token');
+  if (!token) { showToast('Please sign in to download.'); return; }
+  const format = document.querySelector('input[name="dash-format"]:checked')?.value || 'csv';
+  const btn = document.getElementById('dash-download-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try {
+    const res = await fetch('/api/v1/generate/download?format='+format, {
+      headers: { Authorization:'Bearer '+token }
+    });
+    if (!res.ok) { showToast('Download failed. Please try again.'); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'synthmed-dataset.' + format;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Download started!');
+  } catch { showToast('Network error. Please try again.'); }
+  finally { btn.disabled = false; btn.textContent = 'Download Dataset'; }
+}
+
+function dashLogout() {
+  localStorage.removeItem('sm_access_token');
+  const navBtn = document.getElementById('nav-dashboard-btn');
+  if (navBtn) navBtn.style.display = 'none';
+  showPage('home');
+  showToast('Signed out.');
+}
 </script>
+
+<!-- CHECKOUT MODAL -->
+<div id="checkout-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:16px;padding:36px;width:100%;max-width:420px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <button onclick="closeCheckoutModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#6b7f8e;">✕</button>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Create account to continue</h2>
+    <p style="font-size:14px;color:#6b7f8e;margin-bottom:20px;">You'll be redirected to secure Stripe checkout after.</p>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid #eee;">
+      <button id="cm-tab-register" onclick="switchTab('register')" style="flex:1;padding:10px;background:none;border:none;cursor:pointer;font-size:14px;font-weight:600;border-bottom:2px solid #0a7ea4;margin-bottom:-2px;color:#0a7ea4;" class="active">Register</button>
+      <button id="cm-tab-login" onclick="switchTab('login')" style="flex:1;padding:10px;background:none;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#6b7f8e;">Sign In</button>
+    </div>
+
+    <p id="cm-error" style="color:#b91c1c;font-size:13px;margin-bottom:12px;min-height:18px;"></p>
+
+    <!-- Register form -->
+    <div id="cm-register-form">
+      <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">Email</label><input id="cm-reg-email" type="email" placeholder="you@organization.com" style="width:100%;padding:10px 14px;border:1.5px solid #dde4ea;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;"></div>
+      <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">Organization</label><input id="cm-reg-org" type="text" placeholder="Your organization" style="width:100%;padding:10px 14px;border:1.5px solid #dde4ea;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;"></div>
+      <div style="margin-bottom:20px;"><label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">Password <span style="color:#9badb9;">(12+ chars, upper, lower, number, symbol)</span></label><input id="cm-reg-pass" type="password" placeholder="Create a strong password" style="width:100%;padding:10px 14px;border:1.5px solid #dde4ea;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;"></div>
+      <button id="cm-reg-btn" onclick="cmRegister()" style="width:100%;padding:12px;background:#0a7ea4;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Create Account & Pay</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="cm-login-form" style="display:none;">
+      <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">Email</label><input id="cm-login-email" type="email" placeholder="you@organization.com" style="width:100%;padding:10px 14px;border:1.5px solid #dde4ea;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;"></div>
+      <div style="margin-bottom:20px;"><label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">Password</label><input id="cm-login-pass" type="password" placeholder="Your password" style="width:100%;padding:10px 14px;border:1.5px solid #dde4ea;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;"></div>
+      <button id="cm-login-btn" onclick="cmLogin()" style="width:100%;padding:12px;background:#0a7ea4;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In & Pay</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

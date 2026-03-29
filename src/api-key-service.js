@@ -2,6 +2,16 @@ import crypto from 'crypto';
 import { createApiKey, revokeApiKey, getApiKeysByAccount, getApiKeyByKey } from '../db.js';
 
 /**
+ * Hash an API key with SHA-256 for safe DB storage.
+ * Raw key shown to user once at creation — only the hash is persisted.
+ * @param {string} key - Raw API key
+ * @returns {string} SHA-256 hex digest
+ */
+export function hashApiKey(key) {
+  return crypto.createHash('sha256').update(key).digest('hex');
+}
+
+/**
  * Generate a secure API key
  * Format: sk_{32_random_chars}
  * @returns {string} API key
@@ -19,13 +29,14 @@ export function generateApiKey() {
  */
 export function createAccountApiKey(accountId, name) {
   const key = generateApiKey();
+  const keyHash = hashApiKey(key); // store only the hash
   const expiresAt = new Date();
   expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 365 days
 
   try {
     const result = createApiKey.run(
       accountId,
-      key,
+      keyHash,
       name,
       expiresAt.toISOString(),
       new Date().toISOString()
@@ -33,7 +44,7 @@ export function createAccountApiKey(accountId, name) {
 
     return {
       id: result.lastInsertRowid,
-      key, // Only returned once, at creation time
+      key, // Only returned once, at creation time — never stored in plain text
       name,
       createdAt: new Date().toISOString(),
       expiresAt: expiresAt.toISOString(),
@@ -78,10 +89,10 @@ export function listAccountApiKeys(accountId) {
 }
 
 /**
- * Validate an API key
- * @param {string} key - API key
+ * Validate an API key by hashing it and looking up the stored hash.
+ * @param {string} key - Raw API key from request header
  * @returns {Object} Key record if valid, null otherwise
  */
 export function validateApiKey(key) {
-  return getApiKeyByKey.get(key);
+  return getApiKeyByKey.get(hashApiKey(key));
 }

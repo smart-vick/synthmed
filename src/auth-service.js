@@ -1,6 +1,6 @@
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createAccount, getAccountByEmail } from '../db.js';
+import { createAccount, getAccountByEmail, getAccountById } from '../db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_SECRET + '_refresh'; // Use same secret with suffix
@@ -124,11 +124,17 @@ export function refreshAccessToken(refreshToken) {
       throw new Error('Invalid token type');
     }
 
+    // Fetch fresh account data so tier upgrades reflect immediately
+    const account = getAccountById.get(decoded.accountId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
     const accessToken = jwt.sign(
       {
-        accountId: decoded.accountId,
-        email: decoded.email,
-        tier: decoded.tier,
+        accountId: account.id,
+        email: account.email,
+        tier: account.tier,  // always current, not stale from old token
         type: 'access',
       },
       JWT_SECRET,

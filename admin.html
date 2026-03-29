@@ -109,7 +109,7 @@
 <header>
   <div class="logo"><span>Synth</span>Med <span style="color:rgba(255,255,255,.3);font-weight:400;font-size:14px;margin-left:8px;">Admin</span></div>
   <div class="header-right">
-    <span class="env-badge">LOCAL DEV</span>
+    <span class="env-badge" id="env-badge">LOCAL DEV</span>
     <button class="logout-btn" onclick="logout()">Sign out</button>
   </div>
 </header>
@@ -125,7 +125,6 @@
       <input type="password" id="admin-key" placeholder="Enter admin key" onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn-primary" onclick="login()">Sign in</button>
-    <p style="font-size:12px;color:#9badb9;margin-top:16px;text-align:center;">Default dev key: <code>dev-only</code></p>
   </div>
 </div>
 
@@ -211,9 +210,19 @@
 <div id="toast"></div>
 
 <script>
-const API = 'http://localhost:3000';
+const API = window.location.origin;
 let adminKey = '';
 let allLeads = [];
+
+// Show LOCAL DEV badge only on localhost
+(function() {
+  const badge = document.getElementById('env-badge');
+  const host = window.location.hostname;
+  if (badge) {
+    badge.textContent = (host === 'localhost' || host === '127.0.0.1') ? 'LOCAL DEV' : '';
+    badge.style.display = (host === 'localhost' || host === '127.0.0.1') ? '' : 'none';
+  }
+})();
 
 // ── AUTH ──────────────────────────────────────────────────────
 function login() {
@@ -239,7 +248,7 @@ document.getElementById('admin-key').addEventListener('keydown', e => {
 async function loadData() {
   try {
     // Load leads
-    const res = await fetch(`${API}/api/leads`, {
+    const res = await fetch(`${API}/api/v1/admin/leads?limit=100`, {
       headers: { 'x-admin-key': adminKey }
     });
 
@@ -337,8 +346,8 @@ async function markContacted(id) { await markStatus(id, 'contacted'); }
 
 async function markStatus(id, status) {
   try {
-    const res = await fetch(`${API}/api/leads/${id}/status`, {
-      method: 'PATCH',
+    const res = await fetch(`${API}/api/v1/admin/leads/${id}/status`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
       body: JSON.stringify({ status })
     });

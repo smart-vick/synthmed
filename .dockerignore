@@ -1,0 +1,6 @@
+node_modules
+.env
+synthmed.db
+*.log
+.claude
+.git
