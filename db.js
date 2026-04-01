@@ -1,437 +1,161 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import Database from 'better-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://koreeokbppxvbecvoool.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const db = new Database(process.env.DB_PATH || path.join(__dirname, 'synthmed.db'));
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Enable foreign keys
+db.pragma('foreign_keys = ON');
+
+// Create all tables
+db.exec(`
+  -- Accounts table
+  CREATE TABLE IF NOT EXISTS accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    organization TEXT NOT NULL,
+    tier TEXT DEFAULT 'free' CHECK(tier IN ('free', 'starter', 'pro', 'enterprise')),
+    status TEXT DEFAULT 'active' CHECK(status IN ('active', 'suspended', 'deleted')),
+    stripe_customer_id TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  -- API Keys table
+  CREATE TABLE IF NOT EXISTS api_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL,
+    key TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked_at TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+  );
+
+  -- Usage events table (for tracking API usage)
+  CREATE TABLE IF NOT EXISTS usage_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL,
+    api_key_id INTEGER,
+    endpoint TEXT NOT NULL,
+    records_generated INTEGER DEFAULT 0,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (api_key_id) REFERENCES api_keys(id) ON DELETE SET NULL
+  );
+
+  -- Audit logs table
+  CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER,
+    action TEXT NOT NULL,
+    resource TEXT,
+    resource_id INTEGER,
+    ip_address TEXT,
+    user_agent TEXT,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL
+  );
+
+  -- Leads table (for lead capture)
+  CREATE TABLE IF NOT EXISTS leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    organization TEXT NOT NULL,
+    role TEXT,
+    message TEXT,
+    status TEXT DEFAULT 'new' CHECK(status IN ('new', 'contacted', 'converted', 'lost')),
+    created_at TEXT NOT NULL
+  );
+
+  -- Preview events table
+  CREATE TABLE IF NOT EXISTS preview_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    province TEXT,
+    condition_category TEXT,
+    format TEXT,
+    generated_at TEXT NOT NULL
+  );
+
+  -- Create indexes for faster queries
+  CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email);
+  CREATE INDEX IF NOT EXISTS idx_api_keys_account ON api_keys(account_id);
+  CREATE INDEX IF NOT EXISTS idx_api_keys_key ON api_keys(key);
+  CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at ON api_keys(expires_at);
+  CREATE INDEX IF NOT EXISTS idx_usage_events_account ON usage_events(account_id);
+  CREATE INDEX IF NOT EXISTS idx_usage_events_timestamp ON usage_events(timestamp);
+  CREATE INDEX IF NOT EXISTS idx_usage_events_api_key_id ON usage_events(api_key_id);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_account ON audit_logs(account_id);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
+  CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
+`);
+
+// Migrate existing DB: add stripe_customer_id if missing
+try {
+  db.exec(`ALTER TABLE accounts ADD COLUMN stripe_customer_id TEXT`);
+} catch (e) {
+  // Column already exists — ignore
+}
+
+// Index depends on stripe_customer_id column existing — create after migration
+db.exec(`CREATE INDEX IF NOT EXISTS idx_accounts_stripe_customer ON accounts(stripe_customer_id)`);
 
 // Account operations
-export const createAccount = {
-  run: async (email, passwordHash, organization) => {
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('accounts')
-      .insert({
-        email,
-        password_hash: passwordHash,
-        organization,
-        tier: 'free',
-        status: 'active',
-        created_at: now,
-        updated_at: now
-      })
-      .select('id');
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return { lastID: data[0].id };
-  }
-};
-
-export const getAccountByEmail = {
-  get: async (email) => {
-    const { data, error } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('email', email)
-      .neq('status', 'deleted')
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || null;
-  }
-};
-
-export const getAccountById = {
-  get: async (id) => {
-    const { data, error } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('id', id)
-      .neq('status', 'deleted')
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || null;
-  }
-};
-
-export const updateAccountTier = {
-  run: async (tier, updatedAt, id) => {
-    const { error } = await supabase
-      .from('accounts')
-      .update({
-        tier,
-        updated_at: updatedAt
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
-
-export const updateStripeCustomerId = {
-  run: async (stripeCustomerId, updatedAt, id) => {
-    const { error } = await supabase
-      .from('accounts')
-      .update({
-        stripe_customer_id: stripeCustomerId,
-        updated_at: updatedAt
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
-
-export const getAccountByStripeCustomerId = {
-  get: async (stripeCustomerId) => {
-    const { data, error } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('stripe_customer_id', stripeCustomerId)
-      .neq('status', 'deleted')
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || null;
-  }
-};
-
-export const deleteAccount = {
-  run: async (updatedAt, id) => {
-    const { error } = await supabase
-      .from('accounts')
-      .update({
-        status: 'deleted',
-        updated_at: updatedAt
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
+export const createAccount = db.prepare(`
+  INSERT INTO accounts (email, password_hash, organization, tier, status, created_at, updated_at)
+  VALUES (?, ?, ?, 'free', 'active', ?, ?)
+`);
+export const getAccountByEmail = db.prepare("SELECT * FROM accounts WHERE email = ? AND status != 'deleted'");
+export const getAccountById = db.prepare("SELECT * FROM accounts WHERE id = ? AND status != 'deleted'");
+export const updateAccountTier = db.prepare('UPDATE accounts SET tier = ?, updated_at = ? WHERE id = ?');
+export const updateStripeCustomerId = db.prepare('UPDATE accounts SET stripe_customer_id = ?, updated_at = ? WHERE id = ?');
+export const getAccountByStripeCustomerId = db.prepare("SELECT * FROM accounts WHERE stripe_customer_id = ? AND status != 'deleted'");
+export const deleteAccount = db.prepare("UPDATE accounts SET status = 'deleted', updated_at = ? WHERE id = ?");
 
 // API Key operations
-export const createApiKey = {
-  run: async (accountId, keyHash, name, expiresAt) => {
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('api_keys')
-      .insert({
-        account_id: accountId,
-        key: keyHash,
-        name,
-        expires_at: expiresAt,
-        created_at: now
-      })
-      .select('id');
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return { lastID: data[0].id };
-  }
-};
-
-export const getApiKeyByKey = {
-  get: async (keyHash) => {
-    const { data, error } = await supabase
-      .from('api_keys')
-      .select('*')
-      .eq('key', keyHash)
-      .is('revoked_at', null)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || null;
-  }
-};
-
-export const getApiKeysByAccount = {
-  all: async (accountId) => {
-    const { data, error } = await supabase
-      .from('api_keys')
-      .select('id, name, key, expires_at, created_at')
-      .eq('account_id', accountId)
-      .is('revoked_at', null)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    // Transform key to preview
-    return (data || []).map(item => ({
-      id: item.id,
-      name: item.name,
-      key_preview: item.key.substring(0, 7) + '...',
-      expires_at: item.expires_at,
-      created_at: item.created_at
-    }));
-  }
-};
-
-export const revokeApiKey = {
-  run: async (revokedAt, id, accountId) => {
-    const { error } = await supabase
-      .from('api_keys')
-      .update({
-        revoked_at: revokedAt
-      })
-      .eq('id', id)
-      .eq('account_id', accountId);
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
+export const createApiKey = db.prepare(`
+  INSERT INTO api_keys (account_id, key, name, expires_at, created_at)
+  VALUES (?, ?, ?, ?, ?)
+`);
+export const getApiKeyByKey = db.prepare('SELECT * FROM api_keys WHERE key = ? AND revoked_at IS NULL');
+export const getApiKeysByAccount = db.prepare("SELECT id, name, SUBSTR(key, 1, 7) || '...' as key_preview, expires_at, created_at FROM api_keys WHERE account_id = ? AND revoked_at IS NULL ORDER BY created_at DESC");
+export const revokeApiKey = db.prepare('UPDATE api_keys SET revoked_at = ? WHERE id = ? AND account_id = ?');
 
 // Usage tracking
-export const recordUsage = {
-  run: async (accountId, apiKeyId, endpoint, recordsGenerated, timestamp) => {
-    const { error } = await supabase
-      .from('usage_events')
-      .insert({
-        account_id: accountId,
-        api_key_id: apiKeyId,
-        endpoint,
-        records_generated: recordsGenerated,
-        timestamp
-      });
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
-
-export const getUserMonthlyUsage = {
-  all: async (accountId) => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const { data, error } = await supabase
-      .from('usage_events')
-      .select('timestamp, records_generated')
-      .eq('account_id', accountId)
-      .gte('timestamp', thirtyDaysAgo.toISOString());
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    // Group by month and aggregate
-    const grouped = {};
-    (data || []).forEach(item => {
-      const date = new Date(item.timestamp);
-      const month = date.toISOString().substring(0, 7); // YYYY-MM
-
-      if (!grouped[month]) {
-        grouped[month] = { total_requests: 0, total_records: 0, month };
-      }
-      grouped[month].total_requests++;
-      grouped[month].total_records += item.records_generated || 0;
-    });
-
-    return Object.values(grouped);
-  }
-};
+export const recordUsage = db.prepare(`
+  INSERT INTO usage_events (account_id, api_key_id, endpoint, records_generated, timestamp)
+  VALUES (?, ?, ?, ?, ?)
+`);
+export const getUserMonthlyUsage = db.prepare(`
+  SELECT
+    COUNT(*) as total_requests,
+    SUM(records_generated) as total_records,
+    strftime('%Y-%m', timestamp) as month
+  FROM usage_events
+  WHERE account_id = ? AND timestamp >= datetime('now', '-30 days')
+  GROUP BY month
+`);
 
 // Audit logging
-export const recordAudit = {
-  run: async (accountId, action, resource, resourceId, ipAddress, userAgent, timestamp) => {
-    const { error } = await supabase
-      .from('audit_logs')
-      .insert({
-        account_id: accountId,
-        action,
-        resource,
-        resource_id: resourceId,
-        ip_address: ipAddress,
-        user_agent: userAgent,
-        timestamp
-      });
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
+export const recordAudit = db.prepare(`
+  INSERT INTO audit_logs (account_id, action, resource, resource_id, ip_address, user_agent, timestamp)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
 
 // Lead operations
-export const insertLead = {
-  run: async (name, email, organization, role, message, createdAt) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .insert({
-        name,
-        email,
-        organization,
-        role,
-        message,
-        created_at: createdAt
-      })
-      .select('id');
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return { lastID: data[0].id };
-  }
-};
-
-export const getAllLeads = {
-  all: async () => {
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || [];
-  }
-};
-
-export const getLeadById = {
-  get: async (id) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || null;
-  }
-};
-
-export const updateLeadStatus = {
-  run: async (status, id) => {
-    const { error } = await supabase
-      .from('leads')
-      .update({
-        status
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
-
-export const getLeadsWithPagination = {
-  all: async (limit, offset) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return data || [];
-  }
-};
-
-export const countAllLeads = {
-  get: async () => {
-    const { count, error } = await supabase
-      .from('leads')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return { count };
-  }
-};
+export const insertLead = db.prepare('INSERT INTO leads (name, email, organization, role, message, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+export const getAllLeads = db.prepare('SELECT * FROM leads ORDER BY created_at DESC');
+export const getLeadById = db.prepare('SELECT * FROM leads WHERE id = ?');
+export const updateLeadStatus = db.prepare('UPDATE leads SET status = ? WHERE id = ?');
+export const getLeadsWithPagination = db.prepare('SELECT * FROM leads ORDER BY created_at DESC LIMIT ? OFFSET ?');
+export const countAllLeads = db.prepare('SELECT COUNT(*) as count FROM leads');
 
 // Preview events
-export const insertPreviewEvent = {
-  run: async (province, conditionCategory, format, generatedAt) => {
-    const { error } = await supabase
-      .from('preview_events')
-      .insert({
-        province,
-        condition_category: conditionCategory,
-        format,
-        generated_at: generatedAt
-      });
+export const insertPreviewEvent = db.prepare('INSERT INTO preview_events (province, condition_category, format, generated_at) VALUES (?, ?, ?, ?)');
+export function getPreviewCount() { return db.prepare('SELECT COUNT(*) as count FROM preview_events').get(); }
 
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-  }
-};
-
-export const getPreviewCount = {
-  get: async () => {
-    const { count, error } = await supabase
-      .from('preview_events')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) {
-      console.error('Database error:', error.message);
-      throw error;
-    }
-
-    return { count };
-  }
-};
-
-export default { supabase };
+export default db;

@@ -27,22 +27,23 @@ export function generateApiKey() {
  * @param {string} name - Key name
  * @returns {Object} API key details (with full key visible only once)
  */
-export async function createAccountApiKey(accountId, name) {
+export function createAccountApiKey(accountId, name) {
   const key = generateApiKey();
   const keyHash = hashApiKey(key); // store only the hash
   const expiresAt = new Date();
   expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 365 days
 
   try {
-    const result = await createApiKey.run(
+    const result = createApiKey.run(
       accountId,
       keyHash,
       name,
-      expiresAt.toISOString()
+      expiresAt.toISOString(),
+      new Date().toISOString()
     );
 
     return {
-      id: result.lastID,
+      id: result.lastInsertRowid,
       key, // Only returned once, at creation time — never stored in plain text
       name,
       createdAt: new Date().toISOString(),
@@ -61,9 +62,9 @@ export async function createAccountApiKey(accountId, name) {
  * @param {number} accountId - Account ID (for verification)
  * @returns {boolean} Success
  */
-export async function revokeAccountApiKey(keyId, accountId) {
+export function revokeAccountApiKey(keyId, accountId) {
   try {
-    await revokeApiKey.run(new Date().toISOString(), keyId, accountId);
+    revokeApiKey.run(new Date().toISOString(), keyId, accountId);
     return true;
   } catch (err) {
     const error = new Error('Failed to revoke API key');
@@ -77,9 +78,9 @@ export async function revokeAccountApiKey(keyId, accountId) {
  * @param {number} accountId - Account ID
  * @returns {Array} Array of API key objects (key is masked)
  */
-export async function listAccountApiKeys(accountId) {
+export function listAccountApiKeys(accountId) {
   try {
-    return await getApiKeysByAccount.all(accountId) || [];
+    return getApiKeysByAccount.all(accountId) || [];
   } catch (err) {
     const error = new Error('Failed to retrieve API keys');
     error.status = 500;
@@ -92,6 +93,6 @@ export async function listAccountApiKeys(accountId) {
  * @param {string} key - Raw API key from request header
  * @returns {Object} Key record if valid, null otherwise
  */
-export async function validateApiKey(key) {
-  return await getApiKeyByKey.get(hashApiKey(key));
+export function validateApiKey(key) {
+  return getApiKeyByKey.get(hashApiKey(key));
 }
