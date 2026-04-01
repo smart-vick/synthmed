@@ -793,55 +793,59 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
   <section id="pricing">
     <div class="container">
       <span class="section-label reveal">Pricing</span>
-      <h2 class="section-h2 reveal">One-time pricing.<br>No subscriptions.</h2>
-      <p class="section-lead reveal">Pay once, own the data permanently. No recurring fees, no usage caps after delivery.</p>
+      <h2 class="section-h2 reveal">Simple, transparent<br>subscription pricing.</h2>
+      <p class="section-lead reveal">Pay only for what you use. Upgrade anytime, cancel anytime. No contracts, no setup fees.</p>
       <div class="pricing-grid">
+        <!-- FREE TIER -->
         <div class="plan reveal reveal-delay-1">
-          <div class="plan-tier">Starter</div>
-          <div class="plan-price">$500</div>
-          <div class="plan-cycle">One-time payment</div>
+          <div class="plan-tier">Free</div>
+          <div class="plan-price">$0</div>
+          <div class="plan-cycle">Perfect for testing</div>
           <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>10,000 synthetic patient records</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields per record</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All 13 Canadian provinces</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV and JSON formats</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology summary document</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Email support</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100 API calls/month</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Email verification</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Community support</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Basic analytics</li>
+            <li style="opacity:0.5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>Webhook access</li>
           </ul>
-          <a href="#" class="plan-cta" onclick="initiateCheckout('starter');return false;">Get Started</a>
+          <a href="#" class="plan-cta" onclick="initiateCheckout('free');return false;">Get Started Free</a>
         </div>
+
+        <!-- GROWTH TIER - FEATURED -->
         <div class="plan featured reveal reveal-delay-2">
           <div class="plan-badge">Most Popular</div>
-          <div class="plan-tier">Professional</div>
-          <div class="plan-price teal">$2,000</div>
-          <div class="plan-cycle">One-time payment</div>
+          <div class="plan-tier">Growth</div>
+          <div class="plan-price teal">$29<span style="font-size:14px;font-weight:400;color:var(--ink-3);">/month</span></div>
+          <div class="plan-cycle">For growing teams</div>
           <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100,000 synthetic patient records</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields per record</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All 13 Canadian provinces</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV, JSON, and Parquet formats</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Quality validation report</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>5,000 API calls/month</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields</li>
             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority email support</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology documentation</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>API analytics</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom data filters</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Webhook access</li>
           </ul>
-          <a href="#" class="plan-cta primary" onclick="initiateCheckout('pro');return false;">Get Started</a>
+          <a href="#" class="plan-cta primary" onclick="initiateCheckout('growth');return false;">Start 14-Day Trial</a>
         </div>
+
+        <!-- PRO TIER -->
         <div class="plan reveal reveal-delay-3">
-          <div class="plan-tier">Enterprise</div>
-          <div class="plan-price">Custom</div>
-          <div class="plan-cycle">Contact for pricing</div>
+          <div class="plan-tier">Pro</div>
+          <div class="plan-price">$149<span style="font-size:14px;font-weight:400;color:var(--ink-3);">/month</span></div>
+          <div class="plan-cycle">For scaling companies</div>
           <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1M+ patient records</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom field configuration</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom condition distributions</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All formats including custom schema</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated account support</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>White-label available</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>50,000 API calls/month</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated Slack channel</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Advanced analytics</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom data generation</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>99.9% uptime SLA</li>
           </ul>
-          <a href="#" class="plan-cta" onclick="scrollToSection('contact');return false;">Contact Us</a>
+          <a href="#" class="plan-cta" onclick="initiateCheckout('pro');return false;">Start 14-Day Trial</a>
         </div>
       </div>
-      <p style="font-size:13px;color:var(--ink-3);margin-top:24px;">Free sample available: 1,000 records at no cost. Request via the contact form below.</p>
+      <p style="font-size:13px;color:var(--ink-3);margin-top:32px;text-align:center;">✓ No credit card required for Free tier &nbsp;&nbsp; ✓ Cancel anytime &nbsp;&nbsp; ✓ 14-day trial for paid plans</p>
     </div>
   </section>
 
