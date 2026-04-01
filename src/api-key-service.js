@@ -27,23 +27,22 @@ export function generateApiKey() {
  * @param {string} name - Key name
  * @returns {Object} API key details (with full key visible only once)
  */
-export function createAccountApiKey(accountId, name) {
+export async function createAccountApiKey(accountId, name) {
   const key = generateApiKey();
   const keyHash = hashApiKey(key); // store only the hash
   const expiresAt = new Date();
   expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 365 days
 
   try {
-    const result = createApiKey.run(
+    const result = await createApiKey.run(
       accountId,
       keyHash,
       name,
-      expiresAt.toISOString(),
-      new Date().toISOString()
+      expiresAt.toISOString()
     );
 
     return {
-      id: result.lastInsertRowid,
+      id: result.lastID,
       key, // Only returned once, at creation time — never stored in plain text
       name,
       createdAt: new Date().toISOString(),
@@ -62,9 +61,9 @@ export function createAccountApiKey(accountId, name) {
  * @param {number} accountId - Account ID (for verification)
  * @returns {boolean} Success
  */
-export function revokeAccountApiKey(keyId, accountId) {
+export async function revokeAccountApiKey(keyId, accountId) {
   try {
-    revokeApiKey.run(new Date().toISOString(), keyId, accountId);
+    await revokeApiKey.run(new Date().toISOString(), keyId, accountId);
     return true;
   } catch (err) {
     const error = new Error('Failed to revoke API key');
@@ -78,9 +77,9 @@ export function revokeAccountApiKey(keyId, accountId) {
  * @param {number} accountId - Account ID
  * @returns {Array} Array of API key objects (key is masked)
  */
-export function listAccountApiKeys(accountId) {
+export async function listAccountApiKeys(accountId) {
   try {
-    return getApiKeysByAccount.all(accountId) || [];
+    return await getApiKeysByAccount.all(accountId) || [];
   } catch (err) {
     const error = new Error('Failed to retrieve API keys');
     error.status = 500;
@@ -93,6 +92,6 @@ export function listAccountApiKeys(accountId) {
  * @param {string} key - Raw API key from request header
  * @returns {Object} Key record if valid, null otherwise
  */
-export function validateApiKey(key) {
-  return getApiKeyByKey.get(hashApiKey(key));
+export async function validateApiKey(key) {
+  return await getApiKeyByKey.get(hashApiKey(key));
 }

@@ -18,7 +18,7 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
  */
 export async function register(email, organization, password) {
   // Check if account already exists
-  const existingAccount = getAccountByEmail.get(email);
+  const existingAccount = await getAccountByEmail.get(email);
   if (existingAccount) {
     const error = new Error('Account already exists');
     error.code = 'ACCOUNT_EXISTS';
@@ -31,23 +31,21 @@ export async function register(email, organization, password) {
   const now = new Date().toISOString();
 
   try {
-    const result = createAccount.run(
+    const result = await createAccount.run(
       email,
       passwordHash,
-      organization,
-      now,
-      now
+      organization
     );
 
     return {
-      id: result.lastInsertRowid,
+      id: result.lastID,
       email,
       organization,
       tier: 'free',
       status: 'active',
     };
   } catch (err) {
-    if (err.message.includes('UNIQUE constraint failed')) {
+    if (err.message.includes('UNIQUE constraint failed') || err.message.includes('duplicate key')) {
       const error = new Error('Account already exists');
       error.code = 'ACCOUNT_EXISTS';
       error.status = 409;
@@ -64,7 +62,7 @@ export async function register(email, organization, password) {
  * @returns {Object} Tokens and account info
  */
 export async function login(email, password) {
-  const account = getAccountByEmail.get(email);
+  const account = await getAccountByEmail.get(email);
 
   // Always verify password to prevent timing attacks
   const testHash = '$2a$12$K.A6h8Ld9p4KkHK.YfYh.OuYGwFMrN8zKV.Y2wKpH3K2K2K2K2K2'; // dummy hash
@@ -116,7 +114,7 @@ export async function login(email, password) {
  * @param {string} refreshToken - Refresh token
  * @returns {Object} New access token
  */
-export function refreshAccessToken(refreshToken) {
+export async function refreshAccessToken(refreshToken) {
   try {
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
 
@@ -125,7 +123,7 @@ export function refreshAccessToken(refreshToken) {
     }
 
     // Fetch fresh account data so tier upgrades reflect immediately
-    const account = getAccountById.get(decoded.accountId);
+    const account = await getAccountById.get(decoded.accountId);
     if (!account) {
       throw new Error('Account not found');
     }

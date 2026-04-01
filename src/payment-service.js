@@ -173,10 +173,10 @@ export async function handleWebhookEvent(event, accountId) {
       const tier = session.metadata?.tier;
       const now = new Date().toISOString();
       if (accountId && tier && session.payment_status === 'paid') {
-        updateAccountTier.run(tier, now, accountId);
+        await updateAccountTier.run(tier, now, accountId);
         // Store Stripe customer ID so billing portal works
         if (session.customer) {
-          updateStripeCustomerId.run(session.customer, now, accountId);
+          await updateStripeCustomerId.run(session.customer, now, accountId);
         }
         console.log(`[stripe] Account ${accountId} upgraded to ${tier} tier`);
       }
@@ -195,7 +195,7 @@ export async function handleWebhookEvent(event, accountId) {
       if (charge.refunded !== true) break;
       const refundedAccountId = charge.metadata?.accountId;
       if (refundedAccountId) {
-        updateAccountTier.run('free', new Date().toISOString(), parseInt(refundedAccountId, 10));
+        await updateAccountTier.run('free', new Date().toISOString(), parseInt(refundedAccountId, 10));
         console.log(`[stripe] Account ${refundedAccountId} downgraded after full refund`);
       }
       break;
