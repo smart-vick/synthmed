@@ -21,6 +21,8 @@ import db, {
   recordAudit,
   getPreviewCount,
   insertPreviewEvent,
+  recordUsage,
+  deleteAccount,
 } from './db.js';
 
 // Auth imports
@@ -233,11 +235,12 @@ function generateRecord({ province, conditionCategory }) {
 // HEALTH CHECK
 // ─────────────────────────────────────────────────────────────
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   let dbStatus = 'healthy';
   let previewCount = 0;
   try {
-    previewCount = getPreviewCount().count;
+    const result = await getPreviewCount.get();
+    previewCount = result.count || 0;
   } catch {
     dbStatus = 'unhealthy';
   }
@@ -273,7 +276,7 @@ app.post('/api/v1/auth/register', authLimiter, async (req, res) => {
     const account = await register(email, organization, password);
 
     // Log audit
-    recordAudit.run(
+    await recordAudit.run(
       account.id,
       'ACCOUNT_CREATED',
       'account',
@@ -321,7 +324,7 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
     const result = await login(email, password);
 
     // Log audit
-    recordAudit.run(
+    await recordAudit.run(
       result.account.id,
       'LOGIN_SUCCESS',
       'account',
@@ -337,7 +340,7 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
     });
   } catch (err) {
     if (err.code === 'INVALID_CREDENTIALS') {
-      recordAudit.run(
+      await recordAudit.run(
         null,
         'LOGIN_FAILED',
         'account',
@@ -361,7 +364,7 @@ app.post('/api/v1/auth/login', authLimiter, async (req, res) => {
 });
 
 // Refresh token
-app.post('/api/v1/auth/refresh', (req, res) => {
+app.post('/api/v1/auth/refresh', async (req, res) => {
   const validation = validateRequest(refreshTokenSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -373,7 +376,7 @@ app.post('/api/v1/auth/refresh', (req, res) => {
   }
 
   try {
-    const result = refreshAccessToken(validation.data.refreshToken);
+    const result = await refreshAccessToken(validation.data.refreshToken);
     res.status(200).json({
       ok: true,
       ...result,
@@ -388,8 +391,8 @@ app.post('/api/v1/auth/refresh', (req, res) => {
 });
 
 // Get account info
-app.get('/api/v1/account', requireAuth, (req, res) => {
-  const account = getAccountById.get(req.auth.accountId);
+app.get('/api/v1/account', requireAuth, async (req, res) => {
+  const account = await getAccountById.get(req.auth.accountId);
   if (!account) {
     return res.status(404).json({
       ok: false,
@@ -412,8 +415,8 @@ app.get('/api/v1/account', requireAuth, (req, res) => {
 });
 
 // Download full dataset — tier determines record count
-app.get('/api/v1/generate/download', requireAuth, (req, res) => {
-  const account = getAccountById.get(req.auth.accountId);
+app.get('/api/v1/generate/download', requireAuth, async (req, res) => {
+  const account = await getAccountById.get(req.auth.accountId);
   if (!account) {
     return res.status(404).json({ ok: false, error: 'Account not found', code: 'NOT_FOUND' });
   }
@@ -427,8 +430,7 @@ app.get('/api/v1/generate/download', requireAuth, (req, res) => {
     records.push(generateRecord({ province: 'random', conditionCategory: 'random' }));
   }
 
-  db.prepare(`INSERT INTO usage_events (account_id, api_key_id, endpoint, records_generated, timestamp) VALUES (?, ?, ?, ?, ?)`)
-    .run(req.auth.accountId, null, '/api/v1/generate/download', count, new Date().toISOString());
+  await recordUsage.run(req.auth.accountId, null, '/api/v1/generate/download', count, new Date().toISOString());
 
   if (format === 'csv') {
     const headers = Object.keys(records[0]);
@@ -444,11 +446,11 @@ app.get('/api/v1/generate/download', requireAuth, (req, res) => {
 });
 
 // Delete account
-app.delete('/api/v1/account', requireAuth, (req, res) => {
+app.delete('/api/v1/account', requireAuth, async (req, res) => {
   const now = new Date().toISOString();
-  db.prepare("UPDATE accounts SET status = 'deleted', updated_at = ? WHERE id = ?").run(now, req.auth.accountId);
+  await deleteAccount.run(now, req.auth.accountId);
 
-  recordAudit.run(
+  await recordAudit.run(
     req.auth.accountId,
     'ACCOUNT_DELETED',
     'account',
@@ -469,7 +471,7 @@ app.delete('/api/v1/account', requireAuth, (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 // Create API key
-app.post('/api/v1/api-keys', requireAuth, (req, res) => {
+app.post('/api/v1/api-keys', requireAuth, async (req, res) => {
   const validation = validateRequest(createApiKeySchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -482,9 +484,9 @@ app.post('/api/v1/api-keys', requireAuth, (req, res) => {
 
   try {
     const { name } = validation.data;
-    const apiKey = createAccountApiKey(req.auth.accountId, name);
+    const apiKey = await createAccountApiKey(req.auth.accountId, name);
 
-    recordAudit.run(
+    await recordAudit.run(
       req.auth.accountId,
       'API_KEY_CREATED',
       'api_key',
@@ -509,9 +511,9 @@ app.post('/api/v1/api-keys', requireAuth, (req, res) => {
 });
 
 // List API keys
-app.get('/api/v1/api-keys', requireAuth, (req, res) => {
+app.get('/api/v1/api-keys', requireAuth, async (req, res) => {
   try {
-    const keys = listAccountApiKeys(req.auth.accountId);
+    const keys = await listAccountApiKeys(req.auth.accountId);
 
     res.status(200).json({
       ok: true,
@@ -527,7 +529,7 @@ app.get('/api/v1/api-keys', requireAuth, (req, res) => {
 });
 
 // Revoke API key
-app.delete('/api/v1/api-keys/:id', requireAuth, (req, res) => {
+app.delete('/api/v1/api-keys/:id', requireAuth, async (req, res) => {
   const keyId = parseInt(req.params.id, 10);
   if (!Number.isInteger(keyId) || keyId <= 0) {
     return res.status(400).json({
@@ -538,9 +540,9 @@ app.delete('/api/v1/api-keys/:id', requireAuth, (req, res) => {
   }
 
   try {
-    revokeAccountApiKey(keyId, req.auth.accountId);
+    await revokeAccountApiKey(keyId, req.auth.accountId);
 
-    recordAudit.run(
+    await recordAudit.run(
       req.auth.accountId,
       'API_KEY_REVOKED',
       'api_key',
@@ -568,7 +570,7 @@ app.delete('/api/v1/api-keys/:id', requireAuth, (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 // Generate preview (public)
-app.post('/api/v1/generate/preview', attachAccountId, (req, res) => {
+app.post('/api/v1/generate/preview', attachAccountId, async (req, res) => {
   const validation = validateRequest(generatePreviewSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -583,7 +585,7 @@ app.post('/api/v1/generate/preview', attachAccountId, (req, res) => {
     const { province, conditionCategory } = validation.data;
     const record = generateRecord({ province, conditionCategory });
 
-    insertPreviewEvent.run(province, conditionCategory, 'json', new Date().toISOString());
+    await insertPreviewEvent.run(province, conditionCategory, 'json', new Date().toISOString());
 
     res.status(200).json({
       ok: true,
@@ -599,7 +601,7 @@ app.post('/api/v1/generate/preview', attachAccountId, (req, res) => {
 });
 
 // Generate batch (requires API key)
-app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
+app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, async (req, res) => {
   const validation = validateRequest(generateBatchSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -619,13 +621,10 @@ app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
     }
 
     // Log usage
-    db.prepare(`
-      INSERT INTO usage_events (account_id, api_key_id, endpoint, records_generated, timestamp)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(req.auth.accountId, req.auth.apiKeyId, '/api/v1/generate/batch', count, new Date().toISOString());
+    await recordUsage.run(req.auth.accountId, req.auth.apiKeyId, '/api/v1/generate/batch', count, new Date().toISOString());
 
     // Record audit
-    recordAudit.run(
+    await recordAudit.run(
       req.auth.accountId,
       'DATA_GENERATED',
       'batch',
@@ -672,7 +671,7 @@ app.post('/api/v1/generate/batch', apiLimiter, requireApiKey, (req, res) => {
 // LEAD CAPTURE
 // ─────────────────────────────────────────────────────────────
 
-app.post('/api/v1/leads', attachAccountId, (req, res) => {
+app.post('/api/v1/leads', attachAccountId, async (req, res) => {
   const validation = validateRequest(leadSchema, req.body);
   if (!validation.valid) {
     return res.status(400).json({
@@ -685,7 +684,7 @@ app.post('/api/v1/leads', attachAccountId, (req, res) => {
 
   try {
     const { name, email, organization, role, message } = validation.data;
-    const result = insertLead.run(
+    const result = await insertLead.run(
       name,
       email,
       organization,
@@ -695,7 +694,7 @@ app.post('/api/v1/leads', attachAccountId, (req, res) => {
     );
 
     const lead = {
-      id: result.lastInsertRowid,
+      id: result.lastID,
       name,
       email,
       organization,
@@ -712,7 +711,7 @@ app.post('/api/v1/leads', attachAccountId, (req, res) => {
 
     // Log audit
     if (req.auth) {
-      recordAudit.run(
+      await recordAudit.run(
         req.auth.accountId,
         'LEAD_SUBMITTED',
         'lead',
@@ -742,32 +741,35 @@ app.post('/api/v1/leads', attachAccountId, (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 // Get usage stats for authenticated user
-app.get('/api/v1/usage', requireAuth, (req, res) => {
+app.get('/api/v1/usage', requireAuth, async (req, res) => {
   try {
     // Get last 30 days usage
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const usage = db.prepare(`
+    const { query } = db;
+    const usageResult = await query(`
       SELECT
         COUNT(*) as total_requests,
         SUM(records_generated) as total_records,
         endpoint as endpoint_name
       FROM usage_events
-      WHERE account_id = ? AND timestamp >= ?
+      WHERE account_id = $1 AND timestamp >= $2
       GROUP BY endpoint
       ORDER BY total_requests DESC
-    `).all(req.auth.accountId, thirtyDaysAgo.toISOString());
+    `, [req.auth.accountId, thirtyDaysAgo.toISOString()]);
 
-    const totalStats = db.prepare(`
+    const totalStatsResult = await query(`
       SELECT
         COUNT(*) as total_requests,
         COALESCE(SUM(records_generated), 0) as total_records
       FROM usage_events
-      WHERE account_id = ? AND timestamp >= ?
-    `).get(req.auth.accountId, thirtyDaysAgo.toISOString());
+      WHERE account_id = $1 AND timestamp >= $2
+    `, [req.auth.accountId, thirtyDaysAgo.toISOString()]);
 
-    const account = getAccountById.get(req.auth.accountId);
+    const account = await getAccountById.get(req.auth.accountId);
+    const usage = usageResult.rows || [];
+    const totalStats = totalStatsResult.rows[0] || { total_requests: 0, total_records: 0 };
 
     res.status(200).json({
       ok: true,
@@ -775,7 +777,7 @@ app.get('/api/v1/usage', requireAuth, (req, res) => {
         last_30_days: {
           total_requests: totalStats.total_requests || 0,
           total_records: totalStats.total_records || 0,
-          by_endpoint: usage || [],
+          by_endpoint: usage,
         },
         current_tier: account.tier,
         tier_limits: {
@@ -836,7 +838,7 @@ app.post('/api/v1/billing/checkout', requireAuth, async (req, res) => {
       cancelUrl
     );
 
-    recordAudit.run(
+    await recordAudit.run(
       req.auth.accountId,
       'CHECKOUT_SESSION_CREATED',
       'subscription',
@@ -949,7 +951,7 @@ app.post('/api/v1/billing/portal', requireAuth, async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 // List leads
-app.get('/api/v1/admin/leads', requireAdmin, (req, res) => {
+app.get('/api/v1/admin/leads', requireAdmin, async (req, res) => {
   const validation = validateRequest(paginationSchema, req.query);
   if (!validation.valid) {
     return res.status(400).json({
@@ -961,8 +963,9 @@ app.get('/api/v1/admin/leads', requireAdmin, (req, res) => {
   }
 
   const { limit, offset } = validation.data;
-  const leads = getLeadsWithPagination.all(limit, offset);
-  const { count } = countAllLeads.get();
+  const leads = await getLeadsWithPagination.all(limit, offset);
+  const countResult = await countAllLeads.get();
+  const count = countResult.count || 0;
 
   res.status(200).json({
     ok: true,
@@ -978,7 +981,7 @@ app.get('/api/v1/admin/leads', requireAdmin, (req, res) => {
 });
 
 // Get single lead
-app.get('/api/v1/admin/leads/:id', requireAdmin, (req, res) => {
+app.get('/api/v1/admin/leads/:id', requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({
@@ -988,7 +991,7 @@ app.get('/api/v1/admin/leads/:id', requireAdmin, (req, res) => {
     });
   }
 
-  const lead = getLeadById.get(id);
+  const lead = await getLeadById.get(id);
   if (!lead) {
     return res.status(404).json({
       ok: false,
@@ -1004,7 +1007,7 @@ app.get('/api/v1/admin/leads/:id', requireAdmin, (req, res) => {
 });
 
 // Update lead status
-app.put('/api/v1/admin/leads/:id/status', requireAdmin, (req, res) => {
+app.put('/api/v1/admin/leads/:id/status', requireAdmin, async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({
@@ -1024,7 +1027,7 @@ app.put('/api/v1/admin/leads/:id/status', requireAdmin, (req, res) => {
     });
   }
 
-  const lead = getLeadById.get(id);
+  const lead = await getLeadById.get(id);
   if (!lead) {
     return res.status(404).json({
       ok: false,
@@ -1033,7 +1036,7 @@ app.put('/api/v1/admin/leads/:id/status', requireAdmin, (req, res) => {
     });
   }
 
-  updateLeadStatus.run(status, id);
+  await updateLeadStatus.run(status, id);
 
   res.status(200).json({
     ok: true,

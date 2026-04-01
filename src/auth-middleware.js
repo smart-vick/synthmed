@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
  * Middleware to require JWT authentication
  * Attaches auth object to request with accountId, email, tier
  */
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -34,7 +34,7 @@ export function requireAuth(req, res, next) {
     }
 
     // Verify account still exists
-    const account = getAccountById.get(decoded.accountId);
+    const account = await getAccountById.get(decoded.accountId);
     if (!account) {
       return res.status(401).json({
         ok: false,
@@ -64,7 +64,7 @@ export function requireAuth(req, res, next) {
  * Middleware to require API key authentication
  * Attaches auth object to request with accountId and tier
  */
-export function requireApiKey(req, res, next) {
+export async function requireApiKey(req, res, next) {
   const apiKey = req.headers['x-api-key'];
 
   if (!apiKey) {
@@ -75,7 +75,7 @@ export function requireApiKey(req, res, next) {
     });
   }
 
-  const keyRecord = validateApiKey(apiKey);
+  const keyRecord = await validateApiKey(apiKey);
 
   if (!keyRecord) {
     return res.status(401).json({
@@ -95,7 +95,7 @@ export function requireApiKey(req, res, next) {
   }
 
   // Get account info
-  const account = getAccountById.get(keyRecord.account_id);
+  const account = await getAccountById.get(keyRecord.account_id);
   if (!account) {
     return res.status(401).json({
       ok: false,
@@ -139,7 +139,7 @@ export function requireAuthEither(req, res, next) {
  * Middleware to optionally attach account info if authenticated
  * Does not fail if no auth provided
  */
-export function attachAccountId(req, res, next) {
+export async function attachAccountId(req, res, next) {
   const authHeader = req.headers.authorization;
   const apiKey = req.headers['x-api-key'];
 
@@ -147,7 +147,7 @@ export function attachAccountId(req, res, next) {
     const token = authHeader.substring(7);
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      const account = getAccountById.get(decoded.accountId);
+      const account = await getAccountById.get(decoded.accountId);
       if (account) {
         req.auth = {
           accountId: decoded.accountId,
@@ -160,9 +160,9 @@ export function attachAccountId(req, res, next) {
       // Silent fail - authentication is optional
     }
   } else if (apiKey) {
-    const keyRecord = validateApiKey(apiKey);
+    const keyRecord = await validateApiKey(apiKey);
     if (keyRecord && new Date(keyRecord.expires_at) >= new Date()) {
-      const account = getAccountById.get(keyRecord.account_id);
+      const account = await getAccountById.get(keyRecord.account_id);
       if (account) {
         req.auth = {
           accountId: keyRecord.account_id,
