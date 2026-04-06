@@ -81,6 +81,16 @@ db.exec(`
     generated_at TEXT NOT NULL
   );
 
+  -- Page views table (visitor tracking)
+  CREATE TABLE IF NOT EXISTS page_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    referer TEXT,
+    timestamp TEXT NOT NULL
+  );
+
   -- Create indexes for faster queries
   CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email);
   CREATE INDEX IF NOT EXISTS idx_api_keys_account ON api_keys(account_id);
@@ -157,5 +167,21 @@ export const countAllLeads = db.prepare('SELECT COUNT(*) as count FROM leads');
 // Preview events
 export const insertPreviewEvent = db.prepare('INSERT INTO preview_events (province, condition_category, format, generated_at) VALUES (?, ?, ?, ?)');
 export function getPreviewCount() { return db.prepare('SELECT COUNT(*) as count FROM preview_events').get(); }
+
+// Page view tracking
+export const insertPageView = db.prepare(
+  'INSERT INTO page_views (path, ip_address, user_agent, referer, timestamp) VALUES (?, ?, ?, ?, ?)'
+);
+
+export function getVisitorStats() {
+  return {
+    total_visits: db.prepare('SELECT COUNT(*) as count FROM page_views').get().count,
+    unique_ips:   db.prepare('SELECT COUNT(DISTINCT ip_address) as count FROM page_views').get().count,
+    today:        db.prepare("SELECT COUNT(*) as count FROM page_views WHERE timestamp >= date('now')").get().count,
+    this_week:    db.prepare("SELECT COUNT(*) as count FROM page_views WHERE timestamp >= date('now', '-7 days')").get().count,
+    recent:       db.prepare("SELECT path, ip_address, referer, timestamp FROM page_views ORDER BY timestamp DESC LIMIT 20").all(),
+    top_referers: db.prepare("SELECT referer, COUNT(*) as visits FROM page_views WHERE referer IS NOT NULL AND referer != '' GROUP BY referer ORDER BY visits DESC LIMIT 10").all(),
+  };
+}
 
 export default db;

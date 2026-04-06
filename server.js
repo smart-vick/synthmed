@@ -21,6 +21,8 @@ import db, {
   recordAudit,
   getPreviewCount,
   insertPreviewEvent,
+  insertPageView,
+  getVisitorStats,
 } from './db.js';
 
 // Auth imports
@@ -149,6 +151,30 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(__dirname));
 
 // ─────────────────────────────────────────────────────────────
+// VISITOR TRACKING MIDDLEWARE
+// ─────────────────────────────────────────────────────────────
+const BOT_PATTERNS = /bot|crawler|spider|slurp|bingbot|googlebot|facebookexternalhit|render-health/i;
+
+app.use((req, res, next) => {
+  // Only track page requests (not API calls, assets, or bots)
+  const isPage = req.method === 'GET' && !req.path.startsWith('/api/');
+  const isAsset = /\.(js|css|png|jpg|ico|svg|woff|ttf|map)$/.test(req.path);
+  const isBot = BOT_PATTERNS.test(req.headers['user-agent'] || '');
+  if (isPage && !isAsset && !isBot) {
+    try {
+      insertPageView.run(
+        req.path,
+        getClientIp(req),
+        req.headers['user-agent'] || null,
+        req.headers['referer'] || null,
+        new Date().toISOString()
+      );
+    } catch (_) { /* never crash on tracking failure */ }
+  }
+  next();
+});
+
+// ─────────────────────────────────────────────────────────────
 // UTILITY FUNCTIONS
 // ─────────────────────────────────────────────────────────────
 
@@ -250,6 +276,23 @@ app.get('/api/health', (req, res) => {
     database: dbStatus,
     timestamp: new Date().toISOString(),
   });
+});
+
+// ─────────────────────────────────────────────────────────────
+// VISITOR STATS ENDPOINT (admin only — pass ?key=ADMIN_KEY)
+// ─────────────────────────────────────────────────────────────
+
+app.get('/api/admin/visitors', (req, res) => {
+  const key = req.query.key || req.headers['x-admin-key'];
+  if (!key || key !== process.env.ADMIN_KEY) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
+  try {
+    const stats = getVisitorStats();
+    res.json({ ok: true, ...stats });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // ─────────────────────────────────────────────────────────────
