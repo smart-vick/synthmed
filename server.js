@@ -3,8 +3,45 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { insertLead, getAllLeads, getLeadById, updateLeadStatus, insertPreviewEvent, getPreviewCount } from "./db.js";
+import Anthropic from "@anthropic-ai/sdk";
+import { insertLead, getAllLeads, getLeadById, updateLeadStatus, insertPreviewEvent, getPreviewCount, insertPsychSession, insertPsychMessage } from "./db.js";
 import { sendLeadNotification } from "./mailer.js";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const PSYCHIATRIST_SYSTEM = `You are Dr. Marina Chen, an AI psychiatry specialist operating within the OceanMind framework — a conceptual approach that maps the human psyche to the ocean depths.
+
+THE OCEANMIND DEPTH FRAMEWORK:
+🌊 SURFACE (0-10m): Presenting complaints, current mood, today's state
+🐠 SHALLOWS (10-50m): Recent emotional patterns, sleep, appetite, energy, past weeks
+🐙 MID-WATER (50-200m): Behavioral patterns, relationships, work and social functioning
+🦈 DEEP SEA (200-1000m): Core beliefs, self-concept, attachment patterns, identity
+🌑 ABYSS (1000m+): Early experiences, foundational patterns, deep unconscious material
+
+CLINICAL KNOWLEDGE:
+- DSM-5-TR and ICD-11 diagnostic frameworks
+- Evidence-based psychotherapies: CBT, DBT, ACT, EMDR, psychodynamic therapy, somatic therapies
+- Psychopharmacology education (never recommend specific medications or doses)
+- Validated scales: PHQ-9, GAD-7, PSS-10, PCL-5, Columbia Suicide Severity Rating
+- Neuroscience: HPA axis, limbic system, polyvagal theory, neuroplasticity
+- Developmental psychology, attachment theory, trauma-informed care
+
+APPROACH:
+- Begin at the SURFACE — follow the person's lead
+- Validate and reflect before exploring deeper
+- Ask one focused question at a time — never a barrage of questions
+- Use ocean metaphors organically when they illuminate (tides of emotion, currents of thought, storms that pass, depths that hold wisdom)
+- Be warm, direct, and non-pathologizing
+- Name patterns gently, without judgment
+- When appropriate, mention that professional in-person care is available and valuable
+
+SAFETY PROTOCOL — HIGHEST PRIORITY:
+If there is ANY indication of suicidal ideation, self-harm, or harm to others:
+1. Express genuine care and concern directly
+2. Ask clearly about safety
+3. Provide crisis resources: 988 Suicide & Crisis Lifeline (call/text 988), Crisis Text Line (text HOME to 741741), Emergency: 911
+4. Strongly encourage immediate professional or emergency contact
+Never diagnose definitively or prescribe. You are an AI support tool, not a replacement for professional psychiatric care.`;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -156,6 +193,62 @@ app.patch("/api/leads/:id/status", adminOnly, (req, res) => {
     return res.status(400).json({ ok:false, error:"Invalid status" });
   updateLeadStatus.run(status, req.params.id);
   res.json({ ok:true, message:`Lead updated to ${status}` });
+});
+
+app.post("/api/psychiatrist/chat", async (req, res) => {
+  const { messages, sessionId } = req.body ?? {};
+
+  if (!Array.isArray(messages) || messages.length === 0)
+    return res.status(400).json({ ok: false, error: "messages array required" });
+
+  if (!process.env.ANTHROPIC_API_KEY)
+    return res.status(503).json({ ok: false, error: "ANTHROPIC_API_KEY not configured" });
+
+  const history = messages.slice(-20).map(m => ({
+    role: m.role === "user" ? "user" : "assistant",
+    content: String(m.content).slice(0, 4000),
+  }));
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  let fullText = "";
+  try {
+    const stream = anthropic.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: PSYCHIATRIST_SYSTEM,
+      messages: history,
+    });
+
+    stream.on("text", text => {
+      fullText += text;
+      res.write(`data: ${JSON.stringify({ type: "text", text })}\n\n`);
+    });
+
+    await stream.finalMessage();
+
+    if (sessionId && fullText) {
+      const now = new Date().toISOString();
+      insertPsychSession.run(sessionId, now);
+      const lastUser = history[history.length - 1];
+      if (lastUser.role === "user")
+        insertPsychMessage.run(sessionId, "user", lastUser.content, now);
+      insertPsychMessage.run(sessionId, "assistant", fullText, now);
+    }
+
+    res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+    res.end();
+  } catch (err) {
+    console.error("[psychiatrist]", err.message);
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ type: "error", message: "The connection to the depths was lost. Please try again." })}\n\n`);
+      res.end();
+    } else {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  }
 });
 
 app.listen(PORT, () => {
