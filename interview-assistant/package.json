@@ -1,0 +1,16 @@
+{
+  "name": "interview-ai",
+  "version": "1.0.0",
+  "description": "Real-time AI interview assistant — live answers during phone call interviews",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --inspect"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

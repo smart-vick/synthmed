@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InterviewAI</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: rgba(8, 8, 16, 0.92);
+  --border: rgba(0, 255, 136, 0.2);
+  --green: #00ff88;
+  --green-dim: rgba(0, 255, 136, 0.6);
+  --text: #e0e0e0;
+  --muted: #555;
+  --red: #ff4466;
+  --yellow: #ffd700;
+  --blue: #4db8ff;
+  --radius: 12px;
+}
+
+html, body {
+  height: 100%;
+  background: transparent;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+}
+
+.container {
+  height: 100vh;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0,255,136,0.05);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0,255,136,0.1);
+  -webkit-app-region: drag;
+  cursor: move;
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.status-dot.listening { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+.status-dot.processing { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+.status-dot.error { background: var(--red); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-text {
+  font-size: 11px;
+  color: var(--muted);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-text.listening { color: var(--green-dim); }
+.status-text.processing { color: var(--yellow); }
+
+/* Mode tabs */
+.modes {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.mode-btn {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+}
+.mode-btn:hover { border-color: var(--green-dim); color: var(--green-dim); }
+.mode-btn.active { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.08); }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.ctrl-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.ctrl-btn:hover { border-color: var(--text); color: var(--text); }
+.ctrl-btn.active { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.08); }
+
+/* ── Transcript ── */
+.transcript-section {
+  padding: 10px 12px 6px;
+  flex-shrink: 0;
+  min-height: 60px;
+  max-height: 100px;
+}
+
+.section-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.transcript-text {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  min-height: 18px;
+}
+
+.transcript-text .interim { color: #444; font-style: italic; }
+.transcript-text .final { color: #777; }
+.transcript-text .highlight { color: var(--green-dim); }
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.2), transparent);
+  flex-shrink: 0;
+}
+
+/* ── Answer ── */
+.answer-section {
+  flex: 1;
+  padding: 10px 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.answer-section::-webkit-scrollbar { width: 3px; }
+.answer-section::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.2); border-radius: 2px; }
+
+.answer-placeholder {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.answer-text {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+}
+
+.answer-text strong { color: var(--green); font-weight: 600; font-family: inherit; }
+.answer-text em { color: var(--blue); font-style: normal; font-family: inherit; }
+
+.cursor-blink {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--green);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink 0.8s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── Footer ── */
+.footer {
+  padding: 6px 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.shortcuts {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+}
+
+.trigger-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,255,136,0.3);
+  background: rgba(0,255,136,0.06);
+  color: var(--green-dim);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.trigger-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(0,255,136,0.12);
+  box-shadow: 0 0 12px rgba(0,255,136,0.15);
+}
+.trigger-btn:active { transform: scale(0.97); }
+
+/* Not-listening overlay */
+.not-listening {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: rgba(8, 8, 16, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+}
+.not-listening.hidden { display: none; }
+
+.start-btn {
+  padding: 10px 28px;
+  border-radius: 8px;
+  border: 1px solid var(--green);
+  background: rgba(0,255,136,0.1);
+  color: var(--green);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(0,255,136,0.15);
+}
+.start-btn:hover {
+  background: rgba(0,255,136,0.2);
+  box-shadow: 0 0 30px rgba(0,255,136,0.25);
+}
+
+.start-hint { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="status-dot" id="status-dot"></div>
+    <span class="status-text" id="status-text">Ready</span>
+    <div class="modes">
+      <button class="mode-btn active" data-mode="general">GEN</button>
+      <button class="mode-btn" data-mode="technical">TECH</button>
+      <button class="mode-btn" data-mode="behavioral">BEHAV</button>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="click-through-btn" title="Toggle click-through">👆</button>
+      <button class="ctrl-btn" id="clear-btn" title="Clear (⌘⇧C)">✕</button>
+      <button class="ctrl-btn" id="settings-btn" title="Settings">⚙</button>
+    </div>
+  </div>
+
+  <!-- Transcript -->
+  <div class="transcript-section">
+    <div class="section-label">Live Transcript</div>
+    <div class="transcript-text" id="transcript">
+      <span class="final">Waiting for speech...</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Answer -->
+  <div class="answer-section">
+    <div class="section-label">AI Answer</div>
+    <div id="answer-placeholder" class="answer-placeholder">
+      Ask a question — I'll answer in real time.<br>
+      Or press <span style="color:#555">⌘⇧Space</span> to trigger manually.
+    </div>
+    <div id="answer-text" class="answer-text" style="display:none"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="shortcuts">⌘⇧H hide · ⌘⇧C clear · ⌘⇧Space trigger</span>
+    <button class="trigger-btn" id="trigger-btn">▶ Ask Now</button>
+  </div>
+</div>
+
+<!-- Not listening overlay -->
+<div class="not-listening" id="not-listening">
+  <button class="start-btn" id="start-btn">🎤 Start Listening</button>
+  <span class="start-hint">Requires microphone permission</span>
+</div>
+
+<script>
+let mode = 'general';
+let clickThrough = false;
+let answerBuffer = '';
+let spokenBuffer = '';
+let silenceTimer = null;
+let recognition = null;
+let recognitionActive = false;
+
+const $ = id => document.getElementById(id);
+
+function setStatus(state, text) {
+  $('status-dot').className = 'status-dot ' + state;
+  $('status-text').className = 'status-text ' + state;
+  $('status-text').textContent = text;
+}
+
+function showAnswer(text, streaming) {
+  $('answer-placeholder').style.display = 'none';
+  const el = $('answer-text');
+  el.style.display = 'block';
+  el.innerHTML = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>')
+    + (streaming ? '<span class="cursor-blink"></span>' : '');
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearAll() {
+  answerBuffer = '';
+  spokenBuffer = '';
+  clearTimeout(silenceTimer);
+  $('transcript').innerHTML = '<span class="final">Waiting for speech...</span>';
+  $('answer-text').style.display = 'none';
+  $('answer-text').innerHTML = '';
+  $('answer-placeholder').style.display = 'block';
+  if (recognitionActive) setStatus('listening', 'Listening...');
+}
+
+function isQuestion(text) {
+  const t = text.trim().toLowerCase();
+  return text.trim().endsWith('?') ||
+    /^(what|how|why|when|where|who|which|can you|could you|tell me|explain|describe|have you|do you|would you|should i|is there|are there|what is|what are|what was|what were|how do|how does|how did|how would|how should|why is|why did|why would)/.test(t);
+}
+
+function sendToGemini() {
+  const q = spokenBuffer.trim();
+  if (!q || q.split(' ').length < 3) return;
+  spokenBuffer = '';
+  clearTimeout(silenceTimer);
+  $('transcript').innerHTML = '<span class="highlight">' + q + '</span>';
+  window.ai.askGemini(q, mode);
+  setStatus('processing', 'Thinking...');
+}
+
+// ── Web Speech API ─────────────────────────────────────────────────────────────
+function startListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    setStatus('error', 'Speech API not available');
+    return;
+  }
+
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    recognitionActive = true;
+    $('not-listening').classList.add('hidden');
+    setStatus('listening', 'Listening...');
+  };
+
+  recognition.onresult = (event) => {
+    let interim = '';
+    let newFinal = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const r = event.results[i];
+      if (r.isFinal) {
+        newFinal += r[0].transcript;
+      } else {
+        interim += r[0].transcript;
+      }
+    }
+
+    if (newFinal) {
+      spokenBuffer = (spokenBuffer + ' ' + newFinal).trim();
+      $('transcript').innerHTML = '<span class="final">' + spokenBuffer + '</span>';
+
+      clearTimeout(silenceTimer);
+
+      // Fire immediately on a detected question
+      if (isQuestion(newFinal)) {
+        sendToGemini();
+      } else {
+        // Otherwise wait 2s after last word before sending
+        silenceTimer = setTimeout(() => {
+          if (spokenBuffer.split(' ').length >= 4) sendToGemini();
+        }, 2000);
+      }
+    } else if (interim) {
+      $('transcript').innerHTML =
+        '<span class="final">' + spokenBuffer + '</span>' +
+        '<span class="interim"> ' + interim + '</span>';
+    }
+  };
+
+  recognition.onerror = (event) => {
+    if (event.error === 'no-speech' || event.error === 'aborted') return;
+    setStatus('error', 'Mic error: ' + event.error);
+  };
+
+  recognition.onend = () => {
+    // Auto-restart to keep continuous listening
+    if (recognitionActive) {
+      setTimeout(() => { try { recognition.start(); } catch (_) {} }, 150);
+    }
+  };
+
+  recognition.start();
+}
+
+// ── Receive streaming answer from main ────────────────────────────────────────
+window.ai.onAnswer(({ text, done, error }) => {
+  if (error) {
+    showAnswer(text || 'Error.');
+    setStatus('error', 'Error');
+    return;
+  }
+  if (!done) {
+    answerBuffer += text;
+    showAnswer(answerBuffer, true);
+    setStatus('processing', 'Answering...');
+  } else {
+    showAnswer(answerBuffer, false);
+    answerBuffer = '';
+    if (recognitionActive) setStatus('listening', 'Listening...');
+  }
+});
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+  });
+});
+
+$('trigger-btn').addEventListener('click', sendToGemini);
+$('clear-btn').addEventListener('click', clearAll);
+$('settings-btn').addEventListener('click', () => window.ai.openSettings());
+
+$('click-through-btn').addEventListener('click', () => {
+  clickThrough = !clickThrough;
+  window.ai.setClickThrough(clickThrough);
+  $('click-through-btn').classList.toggle('active', clickThrough);
+});
+
+$('start-btn').addEventListener('click', startListening);
+
+window.ai.onAction(a => {
+  if (a === 'clear') clearAll();
+  if (a === 'force') sendToGemini();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  const cfg = await window.ai.getConfig();
+  if (!cfg.GEMINI_API_KEY) window.ai.openSettings();
+})();
+</script>
+</body>
+</html>
