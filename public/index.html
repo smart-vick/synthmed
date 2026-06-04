@@ -313,6 +313,28 @@ details .faq-body{padding:0 24px 20px;font-size:14px;color:var(--ink-2);line-hei
 .back-link{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--teal);margin-bottom:32px;cursor:pointer;}
 .back-link:hover{color:var(--teal-dark);}
 
+/* ─── API DOCS ──────────────────────────────────────────────── */
+.doc-code{background:var(--ink);color:#c8d6df;border-radius:var(--radius);padding:18px 20px;overflow-x:auto;font-family:var(--font-mono);font-size:13px;line-height:1.7;margin:12px 0 16px;}
+.doc-code code{color:inherit;font-family:inherit;font-size:inherit;}
+.doc-code-inline{background:var(--surface-2);border:1px solid var(--rule);padding:2px 7px;border-radius:4px;font-family:var(--font-mono);font-size:13px;color:var(--teal-dark);}
+.doc-endpoint{display:flex;align-items:center;gap:10px;margin-top:32px;margin-bottom:8px;flex-wrap:wrap;}
+.doc-method{padding:4px 10px;border-radius:4px;font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.5px;color:#fff;}
+.doc-method.get{background:#0d7b5e;}
+.doc-method.post{background:var(--teal);}
+.doc-method.delete{background:var(--red);}
+.doc-method.put{background:var(--amber);}
+.doc-path{font-family:var(--font-mono);font-size:15px;font-weight:500;color:var(--ink);}
+.doc-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.3px;}
+.doc-badge.public{background:var(--green-light);color:var(--green);}
+.doc-badge.auth{background:var(--amber-light);color:var(--amber);}
+.doc-badge.apikey{background:var(--teal-light);color:var(--teal-dark);}
+.doc-table{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:14px;}
+.doc-table th{text-align:left;padding:10px 12px;background:var(--surface-2);border:1px solid var(--rule);font-weight:600;font-size:13px;color:var(--ink-2);}
+.doc-table td{padding:10px 12px;border:1px solid var(--rule);color:var(--ink-2);}
+.doc-table code{font-family:var(--font-mono);font-size:13px;color:var(--teal-dark);}
+.doc-section-header{font-size:18px;font-weight:600;color:var(--ink);margin:48px 0 16px;padding-top:16px;border-top:2px solid var(--teal-light);}
+.doc-step{font-size:15px;font-weight:600;color:var(--teal-dark);margin:24px 0 8px;}
+
 /* ─── ABOUT PAGE ─────────────────────────────────────────────── */
 .about-hero{padding:80px 0 60px;border-bottom:1px solid var(--rule);}
 .about-mission{padding:80px 0;background:var(--surface-2);border-bottom:1px solid var(--rule);}
@@ -397,6 +419,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
       <a href="#" onclick="showPage('about');return false;" data-page="about">About</a>
       <a href="#" onclick="scrollToSection('features');return false;">Product</a>
       <a href="#" onclick="scrollToSection('pricing');return false;">Pricing</a>
+      <a href="#" onclick="showPage('docs');return false;" data-page="docs">Docs</a>
       <a href="#" onclick="scrollToSection('contact');return false;">Contact</a>
     </div>
     <div class="nav-actions">
@@ -416,6 +439,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
   <a href="#" onclick="showPage('about');toggleMobile();return false;">About</a>
   <a href="#" onclick="scrollToSection('features');toggleMobile();return false;">Product</a>
   <a href="#" onclick="scrollToSection('pricing');toggleMobile();return false;">Pricing</a>
+  <a href="#" onclick="showPage('docs');toggleMobile();return false;">Docs</a>
   <a href="#" onclick="scrollToSection('contact');toggleMobile();return false;">Contact</a>
   <div class="mobile-actions">
     <a href="#" class="btn btn-outline" onclick="scrollToSection('contact');toggleMobile();return false;">Get Access</a>
@@ -558,13 +582,13 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
         <div class="how-card reveal reveal-delay-2">
           <div class="how-step">2</div>
           <div class="how-title">We generate from statistical models</div>
-          <div class="how-desc">Our system uses probabilistic models built from anonymized population health statistics — not individual records — to produce realistic patient profiles.</div>
+          <div class="how-desc">Our system uses condition-specific parameter ranges informed by published population health statistics. Each diagnosis drives correlated vitals, labs, and medications.</div>
           <div class="how-detail">
             <ul>
-              <li>Epidemiological co-occurrence models</li>
-              <li>Drug-diagnosis pairing logic</li>
-              <li>Lab value distribution curves</li>
-              <li>Temporal admission modeling</li>
+              <li>Condition-correlated lab values and vitals</li>
+              <li>Drug-diagnosis pairing from formulary data</li>
+              <li>Age/sex-adjusted creatinine and hemoglobin</li>
+              <li>Census-weighted province and ethnicity distribution</li>
             </ul>
           </div>
         </div>
@@ -640,8 +664,8 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
   <section id="features">
     <div class="container">
       <span class="section-label reveal">Dataset Contents</span>
-      <h2 class="section-h2 reveal">21 clinical fields.<br>Structurally realistic.</h2>
-      <p class="section-lead reveal">Every field is designed to co-vary realistically with others — diagnoses match medications, lab values follow clinical distributions.</p>
+      <h2 class="section-h2 reveal">22 clinical fields.<br>Structurally co-variant.</h2>
+      <p class="section-lead reveal">Every field co-varies realistically — diabetic patients get elevated glucose and HbA1c, renal patients show high creatinine, demographics follow census weights.</p>
       <div class="features-grid">
         <div class="feat reveal reveal-delay-1">
           <div class="feat-icon">👤</div>
@@ -710,11 +734,17 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
             <div>
               <label class="demo-label" for="demo-condition">Condition Category</label>
               <select id="demo-condition" class="demo-select" onchange="generateRecord()">
-                <option value="random">Random</option>
+                <option value="random">Random (all categories)</option>
                 <option value="cardiovascular">Cardiovascular</option>
                 <option value="diabetes">Diabetes / Metabolic</option>
                 <option value="respiratory">Respiratory</option>
                 <option value="mental-health">Mental Health</option>
+                <option value="orthopedic">Orthopedic</option>
+                <option value="renal">Renal</option>
+                <option value="oncology">Oncology</option>
+                <option value="neurological">Neurological</option>
+                <option value="gastrointestinal">Gastrointestinal</option>
+                <option value="endocrine">Endocrine</option>
               </select>
             </div>
             <div>
@@ -793,59 +823,59 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
   <section id="pricing">
     <div class="container">
       <span class="section-label reveal">Pricing</span>
-      <h2 class="section-h2 reveal">Simple, transparent<br>subscription pricing.</h2>
-      <p class="section-lead reveal">Pay only for what you use. Upgrade anytime, cancel anytime. No contracts, no setup fees.</p>
+      <h2 class="section-h2 reveal">Simple, one-time pricing.<br>No subscriptions.</h2>
+      <p class="section-lead reveal">Pay once, own your dataset forever. Free sample included — no credit card required.</p>
       <div class="pricing-grid">
         <!-- FREE TIER -->
         <div class="plan reveal reveal-delay-1">
-          <div class="plan-tier">Free</div>
+          <div class="plan-tier">Free Sample</div>
           <div class="plan-price">$0</div>
-          <div class="plan-cycle">Perfect for testing</div>
+          <div class="plan-cycle">No credit card required</div>
           <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100 API calls/month</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Email verification</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Community support</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Basic analytics</li>
-            <li style="opacity:0.5;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>Webhook access</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>1,000 patient records</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>22 clinical fields</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV and JSON formats</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All 13 provinces</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology summary</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Email support</li>
           </ul>
-          <a href="#" class="plan-cta" onclick="initiateCheckout('free');return false;">Get Started Free</a>
+          <a href="#" class="plan-cta" onclick="scrollToSection('contact');return false;">Request Free Sample</a>
         </div>
 
-        <!-- GROWTH TIER - FEATURED -->
+        <!-- STARTER TIER - FEATURED -->
         <div class="plan featured reveal reveal-delay-2">
           <div class="plan-badge">Most Popular</div>
-          <div class="plan-tier">Growth</div>
-          <div class="plan-price teal">$29<span style="font-size:14px;font-weight:400;color:var(--ink-3);">/month</span></div>
-          <div class="plan-cycle">For growing teams</div>
+          <div class="plan-tier">Starter</div>
+          <div class="plan-price teal">$500</div>
+          <div class="plan-cycle">One-time payment — 10,000 records</div>
           <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>5,000 API calls/month</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>10,000 patient records</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>22 co-variant clinical fields</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV and JSON formats</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>All 13 provinces + 10 categories</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology documentation</li>
             <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Priority email support</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>API analytics</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom data filters</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Webhook access</li>
           </ul>
-          <a href="#" class="plan-cta primary" onclick="initiateCheckout('growth');return false;">Start 14-Day Trial</a>
+          <a href="#" class="plan-cta primary" onclick="initiateCheckout('starter');return false;">Buy Starter Dataset</a>
         </div>
 
         <!-- PRO TIER -->
         <div class="plan reveal reveal-delay-3">
-          <div class="plan-tier">Pro</div>
-          <div class="plan-price">$149<span style="font-size:14px;font-weight:400;color:var(--ink-3);">/month</span></div>
-          <div class="plan-cycle">For scaling companies</div>
+          <div class="plan-tier">Professional</div>
+          <div class="plan-price">$2,000</div>
+          <div class="plan-cycle">One-time payment — 100,000 records</div>
           <ul class="plan-list">
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>50,000 API calls/month</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>21 clinical fields</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated Slack channel</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Advanced analytics</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Custom data generation</li>
-            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>99.9% uptime SLA</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100,000 patient records</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>22 co-variant clinical fields</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>CSV, JSON, and Parquet formats</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Quality validation report</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Methodology documentation</li>
+            <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Dedicated support</li>
           </ul>
-          <a href="#" class="plan-cta" onclick="initiateCheckout('pro');return false;">Start 14-Day Trial</a>
+          <a href="#" class="plan-cta" onclick="initiateCheckout('pro');return false;">Buy Professional Dataset</a>
         </div>
       </div>
-      <p style="font-size:13px;color:var(--ink-3);margin-top:32px;text-align:center;">✓ No credit card required for Free tier &nbsp;&nbsp; ✓ Cancel anytime &nbsp;&nbsp; ✓ 14-day trial for paid plans</p>
+      <p style="font-size:13px;color:var(--ink-3);margin-top:32px;text-align:center;">✓ Free sample — no credit card &nbsp;&nbsp; ✓ One-time payment, own it forever &nbsp;&nbsp; ✓ Full refund if specs not met</p>
     </div>
   </section>
 
@@ -1117,6 +1147,410 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
   </div>
 </main>
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- API DOCUMENTATION PAGE                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<main id="page-docs" class="page-section">
+  <div class="legal-container" style="max-width:860px;">
+    <a href="#" onclick="showPage('home');return false;" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to home
+    </a>
+    <h1>API Documentation</h1>
+    <p class="legal-meta">SynthMed REST API v1 — Generate synthetic Canadian patient data programmatically</p>
+
+    <div style="background:var(--teal-light);border:1px solid var(--teal-mid);border-radius:var(--radius);padding:16px;margin-bottom:40px;">
+      <strong style="color:var(--teal-dark);">Base URL</strong>
+      <code class="doc-code-inline" style="margin-left:8px;">https://synthmed.onrender.com/api/v1</code>
+    </div>
+
+    <h2>Authentication</h2>
+    <p>SynthMed uses two authentication methods:</p>
+    <ul>
+      <li><strong>JWT Bearer Token</strong> — for account management and billing endpoints. Obtained via the login endpoint.</li>
+      <li><strong>API Key</strong> — for data generation endpoints. Passed as <code class="doc-code-inline">X-API-Key</code> header. Created via the API key management endpoints.</li>
+    </ul>
+
+    <h2 style="margin-top:48px;">Quick Start</h2>
+    <p>Get generating data in 3 steps:</p>
+
+    <h3 class="doc-step">1. Create an account</h3>
+    <pre class="doc-code"><code>curl -X POST https://synthmed.onrender.com/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "dev@yourcompany.com",
+    "organization": "Your Company",
+    "password": "SecureP@ssw0rd!",
+    "confirmPassword": "SecureP@ssw0rd!"
+  }'</code></pre>
+
+    <h3 class="doc-step">2. Login and get your token</h3>
+    <pre class="doc-code"><code>curl -X POST https://synthmed.onrender.com/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "dev@yourcompany.com",
+    "password": "SecureP@ssw0rd!"
+  }'</code></pre>
+    <p>Response includes <code class="doc-code-inline">accessToken</code> and <code class="doc-code-inline">refreshToken</code>.</p>
+
+    <h3 class="doc-step">3. Create an API key and generate data</h3>
+    <pre class="doc-code"><code># Create an API key
+curl -X POST https://synthmed.onrender.com/api/v1/api-keys \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-app-key"}'
+
+# Generate a batch of records
+curl -X POST https://synthmed.onrender.com/api/v1/generate/batch \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"count": 100, "format": "json"}'</code></pre>
+
+    <hr style="margin:48px 0;">
+
+    <h2>Endpoints Reference</h2>
+
+    <!-- AUTH ENDPOINTS -->
+    <h3 class="doc-section-header">Authentication</h3>
+
+    <div class="doc-endpoint">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/auth/register</code>
+      <span class="doc-badge public">Public</span>
+    </div>
+    <p>Create a new account.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>email</code></td><td>string</td><td>Yes</td><td>Valid email address</td></tr>
+        <tr><td><code>organization</code></td><td>string</td><td>Yes</td><td>Organization name</td></tr>
+        <tr><td><code>password</code></td><td>string</td><td>Yes</td><td>Min 12 chars, must include upper, lower, number, symbol</td></tr>
+        <tr><td><code>confirmPassword</code></td><td>string</td><td>Yes</td><td>Must match password</td></tr>
+      </tbody>
+    </table>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/auth/login</code>
+      <span class="doc-badge public">Public</span>
+    </div>
+    <p>Authenticate and receive tokens.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>email</code></td><td>string</td><td>Yes</td><td>Account email</td></tr>
+        <tr><td><code>password</code></td><td>string</td><td>Yes</td><td>Account password</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Response:</strong></p>
+    <pre class="doc-code"><code>{
+  "ok": true,
+  "accessToken": "eyJhbGci...",
+  "refreshToken": "eyJhbGci...",
+  "account": {
+    "id": 1,
+    "email": "dev@yourcompany.com",
+    "organization": "Your Company",
+    "tier": "free"
+  }
+}</code></pre>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/auth/refresh</code>
+      <span class="doc-badge public">Public</span>
+    </div>
+    <p>Refresh an expired access token.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>refreshToken</code></td><td>string</td><td>Yes</td><td>The refresh token from login</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ACCOUNT -->
+    <h3 class="doc-section-header">Account</h3>
+
+    <div class="doc-endpoint">
+      <div class="doc-method get">GET</div>
+      <code class="doc-path">/account</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Get your account details and current tier.</p>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method delete">DELETE</div>
+      <code class="doc-path">/account</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Delete your account (soft delete).</p>
+
+    <!-- API KEYS -->
+    <h3 class="doc-section-header">API Keys</h3>
+
+    <div class="doc-endpoint">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/api-keys</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Create a new API key for data generation.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>string</td><td>Yes</td><td>A label for this key (e.g. "production", "staging")</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Response:</strong></p>
+    <pre class="doc-code"><code>{
+  "ok": true,
+  "apiKey": {
+    "id": 1,
+    "key": "sm_live_a1b2c3d4e5f6...",
+    "name": "production",
+    "expires_at": "2027-06-04T..."
+  }
+}</code></pre>
+    <p style="background:var(--amber-light);border:1px solid #f3c87e;border-radius:var(--radius);padding:12px;font-size:13px;color:var(--amber);">
+      The full API key is only shown once at creation. Store it securely.
+    </p>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method get">GET</div>
+      <code class="doc-path">/api-keys</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>List all active API keys (key values are masked).</p>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method delete">DELETE</div>
+      <code class="doc-path">/api-keys/:id</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Revoke an API key by ID.</p>
+
+    <!-- DATA GENERATION -->
+    <h3 class="doc-section-header">Data Generation</h3>
+
+    <div class="doc-endpoint">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/generate/preview</code>
+      <span class="doc-badge public">Public</span>
+    </div>
+    <p>Generate a single sample record. No authentication required — great for testing.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>province</code></td><td>string</td><td>No</td><td>Province code (ON, BC, AB, QC, etc.) or "random"</td></tr>
+        <tr><td><code>conditionCategory</code></td><td>string</td><td>No</td><td>cardiovascular, diabetes, respiratory, mental-health, orthopedic, renal, oncology, neurological, gastrointestinal, endocrine, or "random"</td></tr>
+      </tbody>
+    </table>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/generate/batch</code>
+      <span class="doc-badge apikey">API Key Required</span>
+    </div>
+    <p>Generate multiple records in one request. This is the primary endpoint for production use.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>count</code></td><td>integer</td><td>Yes</td><td>Number of records (1–10,000)</td></tr>
+        <tr><td><code>format</code></td><td>string</td><td>No</td><td>"json" (default) or "csv"</td></tr>
+        <tr><td><code>province</code></td><td>string</td><td>No</td><td>Province code or "random"</td></tr>
+        <tr><td><code>conditionCategory</code></td><td>string</td><td>No</td><td>Condition filter or "random"</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Example response (JSON):</strong></p>
+    <pre class="doc-code"><code>{
+  "ok": true,
+  "records": [
+    {
+      "patient_id": "SYN-CA-7842",
+      "age": 58,
+      "sex": "Female",
+      "province_code": "ON",
+      "province": "Ontario",
+      "icd10_primary": "I10",
+      "diagnosis_label": "Essential Hypertension",
+      "medication": "Lisinopril 10mg",
+      "bmi": 27.3,
+      "bp_mmhg": "148/92",
+      "glucose_mmol": 5.2,
+      "hba1c_pct": 5.4,
+      "los_days": 4,
+      "readmit_30d": false,
+      "synthetic": true
+    }
+  ],
+  "metadata": {
+    "count": 1,
+    "generator_version": "v1",
+    "generated_at": "2026-06-04T12:00:00.000Z"
+  }
+}</code></pre>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method get">GET</div>
+      <code class="doc-path">/generate/download</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Download a full dataset based on your tier. Returns CSV or JSON file.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>In</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>format</code></td><td>string</td><td>Query</td><td>"csv" (default) or "json"</td></tr>
+      </tbody>
+    </table>
+
+    <!-- USAGE -->
+    <h3 class="doc-section-header">Usage & Billing</h3>
+
+    <div class="doc-endpoint">
+      <div class="doc-method get">GET</div>
+      <code class="doc-path">/usage</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Get your API usage stats for the last 30 days.</p>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method get">GET</div>
+      <code class="doc-path">/pricing</code>
+      <span class="doc-badge public">Public</span>
+    </div>
+    <p>Get current pricing tiers and their details.</p>
+
+    <div class="doc-endpoint" style="margin-top:32px;">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/billing/checkout</code>
+      <span class="doc-badge auth">JWT Required</span>
+    </div>
+    <p>Create a Stripe checkout session to upgrade your plan.</p>
+
+    <!-- LEADS -->
+    <h3 class="doc-section-header">Lead Capture</h3>
+
+    <div class="doc-endpoint">
+      <div class="doc-method post">POST</div>
+      <code class="doc-path">/leads</code>
+      <span class="doc-badge public">Public</span>
+    </div>
+    <p>Submit a contact/sample request.</p>
+    <table class="doc-table">
+      <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>string</td><td>Yes</td><td>Full name</td></tr>
+        <tr><td><code>email</code></td><td>string</td><td>Yes</td><td>Email address</td></tr>
+        <tr><td><code>organization</code></td><td>string</td><td>Yes</td><td>Organization name</td></tr>
+        <tr><td><code>role</code></td><td>string</td><td>No</td><td>Job title/role</td></tr>
+        <tr><td><code>message</code></td><td>string</td><td>No</td><td>Project description</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="margin:48px 0;">
+
+    <h2>Record Fields</h2>
+    <p>Every generated record contains 22 co-variant clinical fields:</p>
+    <table class="doc-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>patient_id</code></td><td>string</td><td>SYN-CA-M4F2K1-A3B7</td></tr>
+        <tr><td><code>age</code></td><td>integer</td><td>58</td></tr>
+        <tr><td><code>sex</code></td><td>string</td><td>Female</td></tr>
+        <tr><td><code>ethnicity</code></td><td>string</td><td>South Asian</td></tr>
+        <tr><td><code>province_code</code></td><td>string</td><td>ON</td></tr>
+        <tr><td><code>province</code></td><td>string</td><td>Ontario</td></tr>
+        <tr><td><code>icd10_primary</code></td><td>string</td><td>I10</td></tr>
+        <tr><td><code>diagnosis_label</code></td><td>string</td><td>Essential Hypertension</td></tr>
+        <tr><td><code>secondary_diagnosis</code></td><td>string|null</td><td>E11 Type 2 Diabetes Mellitus</td></tr>
+        <tr><td><code>medication</code></td><td>string</td><td>Lisinopril 10mg</td></tr>
+        <tr><td><code>bmi</code></td><td>float</td><td>27.3</td></tr>
+        <tr><td><code>bp_systolic_mmhg</code></td><td>integer</td><td>148</td></tr>
+        <tr><td><code>bp_diastolic_mmhg</code></td><td>integer</td><td>92</td></tr>
+        <tr><td><code>glucose_mmol</code></td><td>float</td><td>5.2</td></tr>
+        <tr><td><code>hba1c_pct</code></td><td>float</td><td>5.4</td></tr>
+        <tr><td><code>creatinine_umol</code></td><td>integer</td><td>95</td></tr>
+        <tr><td><code>hemoglobin_g_l</code></td><td>integer</td><td>138</td></tr>
+        <tr><td><code>los_days</code></td><td>integer</td><td>4</td></tr>
+        <tr><td><code>admission_date</code></td><td>string</td><td>2026-02-14</td></tr>
+        <tr><td><code>discharge_date</code></td><td>string</td><td>2026-02-18</td></tr>
+        <tr><td><code>readmit_30d</code></td><td>boolean</td><td>false</td></tr>
+        <tr><td><code>synthetic</code></td><td>boolean</td><td>true (always)</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="margin:48px 0;">
+
+    <h2>Rate Limits</h2>
+    <table class="doc-table">
+      <thead><tr><th>Endpoint Type</th><th>Limit</th></tr></thead>
+      <tbody>
+        <tr><td>Authentication</td><td>20 requests / 15 minutes</td></tr>
+        <tr><td>Public endpoints</td><td>100 requests / 15 minutes</td></tr>
+        <tr><td>API (batch generation)</td><td>Based on tier (up to 50,000/hour)</td></tr>
+        <tr><td>Lead capture</td><td>10 requests / 15 minutes</td></tr>
+      </tbody>
+    </table>
+    <p>Rate-limited responses return HTTP <code class="doc-code-inline">429</code> with a <code class="doc-code-inline">Retry-After</code> header.</p>
+
+    <hr style="margin:48px 0;">
+
+    <h2>Error Responses</h2>
+    <p>All errors follow a consistent format:</p>
+    <pre class="doc-code"><code>{
+  "ok": false,
+  "error": "Human-readable error message",
+  "code": "MACHINE_READABLE_CODE"
+}</code></pre>
+    <table class="doc-table">
+      <thead><tr><th>Code</th><th>HTTP Status</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>VALIDATION_FAILED</code></td><td>400</td><td>Request body failed validation</td></tr>
+        <tr><td><code>INVALID_CREDENTIALS</code></td><td>401</td><td>Wrong email or password</td></tr>
+        <tr><td><code>INVALID_TOKEN</code></td><td>401</td><td>JWT is expired or invalid</td></tr>
+        <tr><td><code>MISSING_API_KEY</code></td><td>401</td><td>X-API-Key header not provided</td></tr>
+        <tr><td><code>ACCOUNT_EXISTS</code></td><td>409</td><td>Email already registered</td></tr>
+        <tr><td><code>NOT_FOUND</code></td><td>404</td><td>Resource not found</td></tr>
+        <tr><td><code>INTERNAL_ERROR</code></td><td>500</td><td>Server error</td></tr>
+      </tbody>
+    </table>
+
+    <hr style="margin:48px 0;">
+
+    <h2>SDK Examples</h2>
+
+    <h3 class="doc-step">Python</h3>
+    <pre class="doc-code"><code>import requests
+
+BASE = "https://synthmed.onrender.com/api/v1"
+API_KEY = "sm_live_..."
+
+resp = requests.post(f"{BASE}/generate/batch",
+    headers={"X-API-Key": API_KEY},
+    json={"count": 500, "format": "json", "province": "ON"}
+)
+records = resp.json()["records"]
+print(f"Generated {len(records)} records")</code></pre>
+
+    <h3 class="doc-step">JavaScript / Node.js</h3>
+    <pre class="doc-code"><code>const res = await fetch("https://synthmed.onrender.com/api/v1/generate/batch", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": "sm_live_..."
+  },
+  body: JSON.stringify({ count: 500, format: "json" })
+});
+const { records } = await res.json();
+console.log(`Generated ${records.length} records`);</code></pre>
+
+    <div style="background:var(--surface-2);border:1px solid var(--rule);border-radius:var(--radius-lg);padding:24px;margin-top:48px;text-align:center;">
+      <h3 style="font-size:17px;font-weight:600;margin-bottom:8px;">Need help integrating?</h3>
+      <p style="font-size:14px;color:var(--ink-2);margin-bottom:16px;">We're happy to assist with your integration. Reach out and we'll get back to you within 1 business day.</p>
+      <a href="#" class="btn btn-primary" onclick="showPage('home');scrollToSection('contact');return false;">Contact Us</a>
+    </div>
+  </div>
+</main>
+
 <!-- ─── DASHBOARD PAGE ───────────────────────────────────────── -->
 <main id="page-dashboard" class="page-section">
   <div style="max-width:680px;margin:0 auto;padding:0 24px;">
@@ -1191,6 +1625,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
         <a href="#" onclick="scrollToSection('features');return false;">Dataset Contents</a>
         <a href="#" onclick="scrollToSection('demo');return false;">Live Preview</a>
         <a href="#" onclick="scrollToSection('pricing');return false;">Pricing</a>
+        <a href="#" onclick="showPage('docs');return false;">API Docs</a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
@@ -1216,7 +1651,7 @@ footer{background:var(--ink);color:#fff;padding:64px 0 0;}
 
 <script>
 /* ─── PAGE ROUTING ──────────────────────────────────────────── */
-const PAGES=['home','about','privacy','terms','security','dashboard'];
+const PAGES=['home','about','privacy','terms','security','docs','dashboard'];
 function showPage(id){
   PAGES.forEach(p=>{
     const el=document.getElementById('page-'+p);
@@ -1267,93 +1702,56 @@ document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
 
 /* ─── DEMO GENERATOR ────────────────────────────────────────── */
 let demoCount=0;
-const PROVINCES={
-  ON:'Ontario',BC:'British Columbia',AB:'Alberta',QC:'Quebec',NS:'Nova Scotia',MB:'Manitoba',
-  SK:'Saskatchewan',NB:'New Brunswick',NL:'Newfoundland',PE:'Prince Edward Island',
-  YT:'Yukon',NT:'Northwest Territories',NU:'Nunavut'
-};
-const CONDITIONS={
-  cardiovascular:[
-    {icd:'I10','icd_desc':'Essential Hypertension',med:'Lisinopril 10mg',bp:'148/92',glu:'5.2',hba1c:'5.4'},
-    {icd:'I25','icd_desc':'Chronic Ischaemic Heart Disease',med:'Metoprolol 50mg',bp:'136/84',glu:'5.8',hba1c:'5.6'},
-    {icd:'I48','icd_desc':'Atrial Fibrillation',med:'Apixaban 5mg',bp:'132/80',glu:'5.1',hba1c:'5.3'},
-  ],
-  diabetes:[
-    {icd:'E11','icd_desc':'Type 2 Diabetes Mellitus',med:'Metformin 500mg',bp:'138/86',glu:'9.4',hba1c:'8.1'},
-    {icd:'E11.6','icd_desc':'T2DM with Complications',med:'Empagliflozin 10mg',bp:'144/90',glu:'11.2',hba1c:'9.3'},
-  ],
-  respiratory:[
-    {icd:'J44','icd_desc':'COPD',med:'Tiotropium Inhaler',bp:'158/94',glu:'5.9',hba1c:'5.7'},
-    {icd:'J45','icd_desc':'Asthma',med:'Salbutamol Inhaler PRN',bp:'122/76',glu:'5.0',hba1c:'5.2'},
-  ],
-  'mental-health':[
-    {icd:'F32','icd_desc':'Depressive Episode',med:'Sertraline 50mg',bp:'118/74',glu:'4.8',hba1c:'5.1'},
-    {icd:'F41','icd_desc':'Anxiety Disorder',med:'Escitalopram 10mg',bp:'124/78',glu:'5.0',hba1c:'5.2'},
-  ]
-};
-const ALL_CONDITIONS=Object.values(CONDITIONS).flat();
-function randomFrom(arr){return arr[Math.floor(Math.random()*arr.length)];}
-function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function padId(n){return n.toString().padStart(4,'0');}
-function generateRecord(){
+async function generateRecord(){
   const pvSel=document.getElementById('demo-province').value;
   const condSel=document.getElementById('demo-condition').value;
-  const pvKeys=Object.keys(PROVINCES);
-  const pvKey=pvSel==='random'?pvKeys[Math.floor(Math.random()*pvKeys.length)]:pvSel;
-  const province=PROVINCES[pvKey];
-  const condArr=condSel==='random'?ALL_CONDITIONS:CONDITIONS[condSel]||ALL_CONDITIONS;
-  const cond=randomFrom(condArr);
-  const age=randomInt(28,84);
-  const sex=Math.random()>.48?'Female':'Male';
-  const los=randomInt(2,12);
-  const readmit=Math.random()>.72?'Yes':'No';
-  const bmi=(18+Math.random()*18).toFixed(1);
-  const pid='SYN-CA-'+padId(randomInt(1000,9999));
-  demoCount++;
-  document.getElementById('demo-count').textContent=demoCount;
   const fmt=document.getElementById('demo-format').value;
   const body=document.getElementById('term-body');
-  if(fmt==='json'){
-    const obj={
-      patient_id:pid,age:age+' years',sex,province,
-      icd10_primary:cond.icd+' — '+cond.icd_desc,
-      medication:cond.med,bmi:parseFloat(bmi),
-      bp_mmhg:cond.bp,glucose_mmol:parseFloat(cond.glu),
-      hba1c_pct:parseFloat(cond.hba1c),los_days:los,
-      readmit_30d:readmit,synthetic:true
-    };
+  body.innerHTML='<div class="term-comment">// Fetching from API…</div>';
+  try{
+    const res=await fetch('/api/v1/generate/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({province:pvSel,conditionCategory:condSel})});
+    const data=await res.json();
+    if(!data.ok){body.innerHTML='<div class="term-comment">// Error: '+data.error+'</div>';return;}
+    const record=data.record;
+    demoCount++;
+    document.getElementById('demo-count').textContent=demoCount;
     body.innerHTML='';
-    const comment=document.createElement('div');
-    comment.className='term-comment';comment.textContent='// Synthetically generated — no real patients';
-    body.appendChild(comment);
-    Object.entries(obj).forEach(([k,v],i)=>{
+    if(fmt==='json'){
+      const comment=document.createElement('div');
+      comment.className='term-comment';comment.textContent='// Synthetically generated — co-variant clinical data, no real patients';
+      body.appendChild(comment);
+      const displayFields=['patient_id','age','sex','ethnicity','province','icd10_primary','diagnosis_label','medication','bmi','bp_systolic_mmhg','bp_diastolic_mmhg','glucose_mmol','hba1c_pct','creatinine_umol','hemoglobin_g_l','los_days','admission_date','readmit_30d'];
+      displayFields.forEach((k,i)=>{
+        if(record[k]===undefined||record[k]===null)return;
+        setTimeout(()=>{
+          const row=document.createElement('div');row.className='term-field fade-in';
+          const v=record[k];
+          const isStr=typeof v==='string';
+          const accentKeys=['patient_id','icd10_primary','diagnosis_label'];
+          row.innerHTML='<span class="term-key">"'+k+'"</span><span class="term-val '+(accentKeys.includes(k)?'accent':'')+'">'+(isStr?'"'+v+'"':v)+'</span>';
+          body.appendChild(row);
+        },i*45);
+      });
       setTimeout(()=>{
-        const row=document.createElement('div');row.className='term-field fade-in';
-        const isStr=typeof v==='string';
-        const valClass=k==='patient_id'||k==='province'?'accent':k==='synthetic'||k==='readmit_30d'?'':'' ;
-        row.innerHTML='<span class="term-key">"'+k+'"</span><span class="term-val '+(k==='icd10_primary'?'accent':'')+'">'+
-          (isStr?'"'+v+'"':v)+'</span>';
-        body.appendChild(row);
-      },i*60);
-    });
-    setTimeout(()=>{
-      const st=document.createElement('div');st.className='term-status ok fade-in';
-      st.innerHTML='✓ Record generated — statistically modelled, no source patient data';
-      body.appendChild(st);
-    },Object.keys(obj).length*60+100);
-  } else {
-    const fields='patient_id,age,sex,province,icd10_primary,medication,bmi,bp_mmhg,glucose_mmol,hba1c_pct,los_days,readmit_30d';
-    const vals=`${pid},${age} years,${sex},${province},${cond.icd} — ${cond.icd_desc},${cond.med},${bmi},${cond.bp},${cond.glu},${cond.hba1c},${los},${readmit}`;
-    body.innerHTML='<div class="term-comment">// CSV format — row 1 of 10000</div>';
-    setTimeout(()=>{
-      const h=document.createElement('div');h.className='term-field fade-in';h.style.flexDirection='column';h.style.gap='8px';
-      h.innerHTML='<span class="term-val" style="white-space:normal;word-break:break-all;font-size:11px;">'+fields+'</span>'+
-        '<span class="term-key" style="white-space:normal;word-break:break-all;font-size:11px;">'+vals+'</span>';
-      body.appendChild(h);
-      const st=document.createElement('div');st.className='term-status ok fade-in';st.style.marginTop='12px';
-      st.innerHTML='✓ Record generated';
-      body.appendChild(st);
-    },100);
+        const st=document.createElement('div');st.className='term-status ok fade-in';
+        st.innerHTML='✓ 22 fields · condition-correlated values · '+Object.keys(record).length+' total fields returned';
+        body.appendChild(st);
+      },displayFields.length*45+100);
+    }else{
+      const keys=Object.keys(record);
+      const vals=keys.map(k=>record[k]===null?'':record[k]);
+      body.innerHTML='<div class="term-comment">// CSV format — row 1 of 10000 · 22 fields</div>';
+      setTimeout(()=>{
+        const h=document.createElement('div');h.className='term-field fade-in';h.style.flexDirection='column';h.style.gap='8px';
+        h.innerHTML='<span class="term-val" style="white-space:normal;word-break:break-all;font-size:11px;">'+keys.join(',')+'</span><span class="term-key" style="white-space:normal;word-break:break-all;font-size:11px;">'+vals.join(',')+'</span>';
+        body.appendChild(h);
+        const st=document.createElement('div');st.className='term-status ok fade-in';st.style.marginTop='12px';
+        st.innerHTML='✓ Record generated via API';
+        body.appendChild(st);
+      },100);
+    }
+  }catch(err){
+    body.innerHTML='<div class="term-comment">// Network error — try again</div>';
   }
 }
 
@@ -1370,7 +1768,7 @@ document.getElementById('contact-form').addEventListener('submit',async function
   try{
     const res=await fetch('/api/v1/leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,organization:org,role:document.getElementById('f-role').value,message:document.getElementById('f-msg').value})});
     const data=await res.json();
-    if(data.success==='true'||data.success===true){
+    if(data.ok){
       document.getElementById('form-success').style.display='flex';
       this.reset();
     } else {

@@ -57,26 +57,27 @@ export const createApiKeySchema = z.object({
 });
 
 // Data Generation schemas
+const provinceEnum = z.enum([
+  'ON', 'BC', 'AB', 'QC', 'NS', 'MB', 'SK', 'NB', 'NL', 'PE', 'YT', 'NT', 'NU', 'random'
+]).default('random');
+
+const conditionEnum = z.enum([
+  'cardiovascular', 'diabetes', 'respiratory', 'mental-health', 'orthopedic',
+  'renal', 'oncology', 'neurological', 'gastrointestinal', 'endocrine', 'random'
+]).default('random');
+
 export const generatePreviewSchema = z.object({
-  province: z.enum([
-    'ON', 'BC', 'AB', 'QC', 'NS', 'MB', 'SK', 'NB', 'NL', 'PE', 'YT', 'NT', 'NU', 'random'
-  ]).default('random'),
-  conditionCategory: z.enum([
-    'cardiovascular', 'diabetes', 'respiratory', 'mental-health', 'orthopedic', 'random'
-  ]).default('random'),
+  province: provinceEnum,
+  conditionCategory: conditionEnum,
 }).optional();
 
 export const generateBatchSchema = z.object({
-  province: z.enum([
-    'ON', 'BC', 'AB', 'QC', 'NS', 'MB', 'SK', 'NB', 'NL', 'PE', 'YT', 'NT', 'NU', 'random'
-  ]).default('random'),
-  conditionCategory: z.enum([
-    'cardiovascular', 'diabetes', 'respiratory', 'mental-health', 'orthopedic', 'random'
-  ]).default('random'),
+  province: provinceEnum,
+  conditionCategory: conditionEnum,
   count: z.number()
     .int('Count must be an integer')
     .min(1, 'Count must be at least 1')
-    .max(1000, 'Count cannot exceed 1000')
+    .max(10000, 'Count cannot exceed 10,000')
     .default(10),
   format: z.enum(['csv', 'json']).default('json'),
 });
