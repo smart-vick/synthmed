@@ -1,4 +1,38 @@
-﻿node_modules/
+node_modules/
 .env
 synthmed.db
 *.log
+
+# IDE / tooling
+.vs/
+.vscode/
+.idea/
+
+# Claude Code worktrees and local config
+.claude/launch.json
+.claude/worktrees/
+
+# AI tooling (not part of the app)
+.agents/
+.kiro/
+.claude-plugin/
+
+# Lead lists and outreach docs (keep locally, not in repo)
+*.csv
+B2B_*.md
+COLD_*.md
+OUTREACH_*.md
+*_LEADS*.csv
+*_OUTREACH*.csv
+*_PROSPECTS*.csv
+
+# Old planning docs (superseded by in-app pages)
+AI_RULES.md
+API_SPEC.md
+ARCHITECTURE.md
+LEGAL_DOCS.md
+PLAN.md
+PRD.md
+PRODUCTION_AUDIT_REPORT.md
+PR_SUMMARY.md
+openapi.json
